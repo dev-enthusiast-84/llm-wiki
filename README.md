@@ -354,6 +354,9 @@ This workflow lets you capture research on-the-fly without leaving your browser.
 5. When wiki reaches ~20 pages, run `/Audit Wiki` for quality checks
 6. Commit progress regularly
 
+## Credit
+ Inspired by the concept of LLM Wiki : https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f (Andrej Karpathy) 
+
 ---
 
 **Created**: 2026-04-19  
