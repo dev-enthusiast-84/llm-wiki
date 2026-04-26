@@ -421,97 +421,151 @@ def slide_implementation(prs: Presentation):
         size=34, bold=True, color=C.WHITE)
     hline(sl, Inches(0.55), Inches(1.28), Inches(12.25))
 
-    cw = Inches(5.75)
-    cl = Inches(0.55)
-    cr = Inches(7.0)
+    cl, cr, cw = Inches(0.55), Inches(7.0), Inches(5.72)
+    col_top, col_h = Inches(1.5), Inches(4.45)   # col bottom = 5.95"
+    row_sp, cmd_h  = Inches(0.37), Inches(0.34)
 
-    # Claude Code column
-    rrect(sl, cl, Inches(1.5), cw, Inches(4.55), C.CARD, border=C.ORANGE, bw=1.5)
-    rect(sl, cl, Inches(1.5), cw, Inches(0.07), C.ORANGE)
-    txt(sl, "CLAUDE CODE CLI", cl, Inches(1.6), cw, Inches(0.44),
-        size=13, bold=True, color=C.ORANGE, align=PP_ALIGN.CENTER)
+    # ── Claude Code CLI ────────────────────────────────────────────────────
+    rrect(sl, cl, col_top, cw, col_h, C.CARD, border=C.ORANGE, bw=1.5)
+    rect(sl, cl, col_top, cw, Inches(0.07), C.ORANGE)
+    txt(sl, "CLAUDE CODE CLI", cl, col_top + Inches(0.07), cw, Inches(0.36),
+        size=12, bold=True, color=C.ORANGE, align=PP_ALIGN.CENTER)
 
-    claude_cmds = [
-        ("/compile-papers",          "Extract concepts from all /raw sources"),
-        ("/sync-wiki",               "Incremental update from new sources"),
-        ("/audit-wiki",              "Quality check — orphans, contradictions"),
-        ("/reset-wiki",              "Wipe wiki for a fresh start"),
-        ("/launch-wiki-ui",          "Start Streamlit query interface"),
-        ("/stop-wiki-ui",            "Stop the running Streamlit app"),
-        ("/sync-docs",               "Update README, GitHub Pages, sub-READMEs"),
-        ("/run-maintenance",         "Run tests, verify skills, check git health"),
+    # Wiki Skills section
+    txt(sl, "WIKI SKILLS", cl + Inches(0.15), col_top + Inches(0.48),
+        Inches(2.0), Inches(0.20), size=9, bold=True, color=C.ORANGE)
+
+    wiki_claude = [
+        ("/compile-papers",  "Extract concepts from all /raw sources"),
+        ("/sync-wiki",       "Incremental update from new sources"),
+        ("/audit-wiki",      "Quality check — orphans, contradictions"),
+        ("/reset-wiki",      "Wipe wiki for a fresh start"),
+        ("/launch-wiki-ui",  "Start Streamlit query interface"),
+        ("/stop-wiki-ui",    "Stop the running Streamlit app"),
     ]
-    cy = Inches(2.22)
-    for cmd, desc in claude_cmds:
-        txt(sl, cmd, cl + Inches(0.2), cy, Inches(2.15), Inches(0.36),
-            size=12, bold=True, color=C.ORANGE, font="Courier New")
-        txt(sl, desc, cl + Inches(2.5), cy, Inches(2.95), Inches(0.36),
-            size=11, color=C.LIGHT)
-        cy += Inches(0.48)
+    cy = col_top + Inches(0.69)
+    for cmd, desc in wiki_claude:
+        txt(sl, cmd,  cl + Inches(0.15), cy, Inches(2.1),  cmd_h,
+            size=10, bold=True, color=C.ORANGE, font="Courier New")
+        txt(sl, desc, cl + Inches(2.38), cy, Inches(3.22), cmd_h,
+            size=10, color=C.LIGHT)
+        cy += row_sp
 
-    # Copilot column
-    rrect(sl, cr, Inches(1.5), cw, Inches(4.55), C.CARD, border=C.BLUE, bw=1.5)
-    rect(sl, cr, Inches(1.5), cw, Inches(0.07), C.BLUE)
-    txt(sl, "GITHUB COPILOT CHAT", cr, Inches(1.6), cw, Inches(0.44),
-        size=13, bold=True, color=C.BLUE, align=PP_ALIGN.CENTER)
+    # Repo Maintenance section
+    cy += Inches(0.04)
+    hline(sl, cl + Inches(0.15), cy, cw - Inches(0.3))
+    cy += Inches(0.08)
+    txt(sl, "REPO MAINTENANCE", cl + Inches(0.15), cy,
+        Inches(2.2), Inches(0.20), size=9, bold=True, color=C.PURPLE)
+    cy += Inches(0.22)
 
-    copilot_cmds = [
-        ("/Compile Papers to Wiki",  "Extract from all /raw sources"),
-        ("/Sync Wiki from Raw",      "Incremental update"),
-        ("/Audit Wiki",              "Quality check"),
-        ("/Reset Wiki",              "Wipe wiki for a fresh start"),
-        ("/Launch Wiki UI",          "Start Streamlit query interface"),
-        ("/Stop Wiki UI",            "Stop the running Streamlit app"),
-        ("/Sync Docs",               "Update README and documentation"),
-        ("/Run Maintenance",         "Run tests, verify skills, check git health"),
+    maint_claude = [
+        ("/sync-docs",               "Sync README, GitHub Pages, sub-READMEs"),
+        ("/run-maintenance",         "Run tests, verify skills, git health"),
+        ("/regenerate-presentation", "Rebuild demo videos and PPTX deck"),
     ]
-    ry = Inches(2.22)
-    for cmd, desc in copilot_cmds:
-        txt(sl, cmd, cr + Inches(0.2), ry, Inches(2.7), Inches(0.36),
-            size=12, bold=True, color=C.BLUE, font="Courier New")
-        txt(sl, desc, cr + Inches(3.0), ry, Inches(2.6), Inches(0.36),
-            size=11, color=C.LIGHT)
-        ry += Inches(0.48)
+    for cmd, desc in maint_claude:
+        txt(sl, cmd,  cl + Inches(0.15), cy, Inches(2.1),  cmd_h,
+            size=10, bold=True, color=C.PURPLE, font="Courier New")
+        txt(sl, desc, cl + Inches(2.38), cy, Inches(3.22), cmd_h,
+            size=10, color=C.LIGHT)
+        cy += row_sp
 
-    # Query UI band
-    rrect(sl, cl, Inches(6.22), Inches(12.25), Inches(1.05), C.CARD, border=C.CYAN, bw=1.2)
-    txt(sl, "STREAMLIT QUERY UI", cl + Inches(0.2), Inches(6.32), Inches(2.5), Inches(0.38),
-        size=13, bold=True, color=C.CYAN)
+    # ── GitHub Copilot Chat ────────────────────────────────────────────────
+    rrect(sl, cr, col_top, cw, col_h, C.CARD, border=C.BLUE, bw=1.5)
+    rect(sl, cr, col_top, cw, Inches(0.07), C.BLUE)
+    txt(sl, "GITHUB COPILOT CHAT", cr, col_top + Inches(0.07), cw, Inches(0.36),
+        size=12, bold=True, color=C.BLUE, align=PP_ALIGN.CENTER)
 
-    features = ["API key validation", "Wiki page browser",
-                "Claude-powered Q&A", "Token + cache metrics",
-                "Secure (session memory)", "Explicit 'not found' responses"]
-    fx = Inches(3.5)
-    for feat in features:
-        txt(sl, "· " + feat, fx, Inches(6.32), Inches(1.85), Inches(0.42),
-            size=12, color=C.LIGHT)
-        fx += Inches(1.88)
+    txt(sl, "WIKI SKILLS", cr + Inches(0.15), col_top + Inches(0.48),
+        Inches(2.0), Inches(0.20), size=9, bold=True, color=C.BLUE)
+
+    wiki_copilot = [
+        ("Compile Papers to Wiki", "Extract from all /raw sources"),
+        ("Sync Wiki from Raw",     "Incremental update from new sources"),
+        ("Audit Wiki",             "Quality check — orphans, contradictions"),
+        ("Reset Wiki",             "Wipe wiki for a fresh start"),
+        ("Launch Wiki UI",         "Start Streamlit query interface"),
+        ("Stop Wiki UI",           "Stop the running Streamlit app"),
+    ]
+    cy = col_top + Inches(0.69)
+    for cmd, desc in wiki_copilot:
+        txt(sl, cmd,  cr + Inches(0.15), cy, Inches(2.3),  cmd_h,
+            size=10, bold=True, color=C.BLUE, font="Courier New")
+        txt(sl, desc, cr + Inches(2.58), cy, Inches(3.02), cmd_h,
+            size=10, color=C.LIGHT)
+        cy += row_sp
+
+    cy += Inches(0.04)
+    hline(sl, cr + Inches(0.15), cy, cw - Inches(0.3))
+    cy += Inches(0.08)
+    txt(sl, "REPO MAINTENANCE", cr + Inches(0.15), cy,
+        Inches(2.2), Inches(0.20), size=9, bold=True, color=C.PURPLE)
+    cy += Inches(0.22)
+
+    maint_copilot = [
+        ("Sync Docs",               "Sync README and documentation"),
+        ("Run Maintenance",         "Run tests, verify skills, git health"),
+        ("Regenerate Presentation", "Rebuild demo videos and PPTX deck"),
+    ]
+    for cmd, desc in maint_copilot:
+        txt(sl, cmd,  cr + Inches(0.15), cy, Inches(2.3),  cmd_h,
+            size=10, bold=True, color=C.PURPLE, font="Courier New")
+        txt(sl, desc, cr + Inches(2.58), cy, Inches(3.02), cmd_h,
+            size=10, color=C.LIGHT)
+        cy += row_sp
+
+    # ── Streamlit Query UI band  (y=6.05–7.13", bottom margin 0.37") ──────
+    band_y, band_h = Inches(6.05), Inches(1.08)
+    rrect(sl, cl, band_y, Inches(12.25), band_h, C.CARD, border=C.CYAN, bw=1.2)
+    rect(sl, cl, band_y, Inches(0.07), band_h, C.CYAN)
+
+    txt(sl, "STREAMLIT QUERY UI", cl + Inches(0.2), band_y + Inches(0.10),
+        Inches(2.6), Inches(0.38), size=12, bold=True, color=C.CYAN)
+    txt(sl, "Multi-provider · Grounded", cl + Inches(0.2), band_y + Inches(0.55),
+        Inches(2.6), Inches(0.28), size=9, color=C.DIM)
+
+    # 4 feature items — each 2.3" wide, 2.35" apart; last right edge = 12.75" ✓
+    feat_items = [
+        ("Multi-provider Q&A",        "Anthropic · OpenAI · Google · Mistral · Cohere"),
+        ("Wiki-grounded answers",      "No hallucination outside wiki content"),
+        ("API key + model validation", "Session memory — never saved to disk"),
+        ("Explicit 'not found'",       "Clear signal when topic is outside wiki"),
+    ]
+    fx = Inches(3.4)
+    for title, sub in feat_items:
+        txt(sl, "· " + title, fx, band_y + Inches(0.10), Inches(2.3), Inches(0.36),
+            size=11, bold=True, color=C.LIGHT)
+        txt(sl, sub, fx, band_y + Inches(0.55), Inches(2.3), Inches(0.28),
+            size=9, color=C.DIM)
+        fx += Inches(2.35)
 
     notes(sl, """SPEAKER NOTES — SLIDE 4: IMPLEMENTATION
 
-The system works with both Claude Code CLI and GitHub Copilot Chat — use whichever you already have.
+The system works with both Claude Code CLI and GitHub Copilot Chat.
 
-Claude Code CLI (run in terminal with the `claude` command):
-• /compile-papers — core command; reads everything in /raw and creates wiki pages
-• /sync-wiki — use when you add new papers; detects what's new, updates without clobbering existing content
-• /audit-wiki — run every ~20 pages to catch quality issues
-• /reset-wiki — for starting fresh with a new topic area
-• /launch-wiki-ui — starts the Streamlit web app locally
-• /stop-wiki-ui — stops the running Streamlit process
-• /sync-docs — updates README, GitHub Pages, and sub-READMEs after code changes
-• /run-maintenance — runs tests, verifies all skills registered, checks wiki and git health
+WIKI SKILLS (orange = Claude / blue = Copilot) — the core wiki workflow:
+• compile-papers — reads everything in /raw and creates wiki pages from scratch
+• sync-wiki — use when you add new papers; detects what's new, updates without clobbering
+• audit-wiki — run every ~20 pages to catch orphans, missing links, contradictions
+• reset-wiki — wipe wiki for a fresh start with new topic area
+• launch-wiki-ui — starts the Streamlit web app locally
+• stop-wiki-ui — stops the running Streamlit process
 
-GitHub Copilot Chat equivalents (identical commands, same skill files, different tool surface):
-• /Compile Papers to Wiki, /Sync Wiki from Raw, /Audit Wiki, /Reset Wiki
-• /Launch Wiki UI, /Stop Wiki UI, /Sync Docs, /Run Maintenance
+REPO MAINTENANCE (purple, both tools) — separate from wiki operations:
+• sync-docs — keeps README, GitHub Pages, and copilot-instructions in sync after code changes
+• run-maintenance — full health check: runs tests, verifies skill registration, checks wiki + git state
+• regenerate-presentation — rebuilds demo videos and this deck; detects changed scripts via git
 
-The Streamlit Query UI is a secure web app where you can:
-  • Enter your API key (never saved to disk — lives only in browser session memory)
-  • Browse all wiki pages and see what's covered
-  • Ask natural-language questions → Claude answers from wiki content only
-  • Track token usage and cache performance
+GitHub Copilot Chat equivalents (same skill files, natural language — no slash prefix):
+• Compile Papers to Wiki, Sync Wiki from Raw, Audit Wiki, Reset Wiki, Launch Wiki UI, Stop Wiki UI
+• Sync Docs, Run Maintenance, Regenerate Presentation
 
-Crucially: if you ask about a topic not in the wiki, the UI returns an explicit "No information found" message with instructions to add sources. This is intentional — you always know the boundaries of your knowledge base.
+The Streamlit Query UI is a multi-provider web app:
+  • Supports Anthropic, OpenAI, Google, Mistral, Cohere — enter any model ID + API key
+  • Answers grounded strictly in wiki content (no hallucination outside wiki)
+  • API key lives only in browser session memory — never written to disk
+  • Explicit "No information found" when a topic isn't in the wiki — you always know your boundaries
 
 Timing: ~2 minutes on this slide.""")
 
@@ -559,9 +613,9 @@ def slide_demo(prs: Presentation,
 
 TERMINAL DEMO covers:
   1. Claude Code CLI startup
-  2. /compile-papers — scanning /raw, extracting concepts, creating 34 entity pages
-  3. /sync-wiki — detecting a new file, updating existing pages, creating new ones
-  4. /audit-wiki — finding 2 orphans, 3 missing pages, 1 contradiction
+  2. /compile-papers — scanning 9 /raw sources, creating 37 entity pages
+  3. /sync-wiki — all 9 sources already compiled; wiki is up to date
+  4. /audit-wiki — 37 pages, 252 links resolved, 0 orphans, 0 missing, 0 contradictions
   5. GitHub Copilot Chat equivalents (@workspace /Compile Papers to Wiki + /Launch Wiki UI)
 
 UI DEMO covers:
@@ -572,7 +626,7 @@ UI DEMO covers:
   5. Not-found error — "What is a diffusion model?" → explicit signal + how to add it
 
 Key talking points:
-  • Terminal: minutes from raw papers to 34 interconnected wiki pages
+  • Terminal: minutes from raw papers to 37 interconnected wiki pages
   • UI: the "not found" response is a feature, not a bug — you always know your wiki's boundaries
   • Both tools share the same wiki files — no duplication
   • Every change is git-versioned — safe to collaborate

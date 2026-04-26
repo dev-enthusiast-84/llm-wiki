@@ -2,7 +2,7 @@
 
 A structured system for building and maintaining a personal wiki of LLM/AI concepts from research papers. Extract key concepts from sources, create interconnected entity pages, and keep your knowledge base organized and up-to-date.
 
-**[Live docs →](https://maneettaantony.github.io/llm-wiki/)** · **[GitHub →](https://github.com/maneettaantony/llm-wiki)**
+**[Live docs →](https://dev-enthusiast-84.github.io/llm-wiki/)** · **[GitHub →](https://github.com/dev-enthusiast-84/llm-wiki)**
 
 ## Quick Start
 
