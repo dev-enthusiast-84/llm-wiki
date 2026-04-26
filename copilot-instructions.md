@@ -129,6 +129,11 @@ Prompts live in `.github/prompts/` and are available in GitHub Copilot and VS Co
 
 ## Resources
 
+**Orchestrate Wiki**:
+- Skill: `skills/orchestrate-wiki/SKILL.md`
+- Claude command: `.claude/commands/orchestrate-wiki.md`
+- Copilot prompt: `.github/prompts/orchestrate-wiki.prompt.md`
+
 **Wiki Reset**:
 - Skill: `skills/wiki-reset/SKILL.md`
 - Templates: `skills/wiki-reset/assets/`

@@ -31,11 +31,12 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 
-HERE          = Path(__file__).parent
-PPTX_OUT      = HERE / "llm-wiki-deck.pptx"
-KEY_OUT       = HERE / "llm-wiki-deck.key"
-TERMINAL_VID  = HERE / "terminal-demo.mp4"
-UI_VID        = HERE / "ui-demo.mp4"
+HERE            = Path(__file__).parent
+PPTX_OUT        = HERE / "llm-wiki-deck.pptx"
+PPTX_LIGHT_OUT  = HERE / "llm-wiki-deck-light.pptx"
+KEY_OUT         = HERE / "llm-wiki-deck.key"
+TERMINAL_VID    = HERE / "terminal-demo.mp4"
+UI_VID          = HERE / "ui-demo.mp4"
 
 SLIDE_W = Inches(13.33)
 SLIDE_H = Inches(7.5)
@@ -49,7 +50,7 @@ class C:
     CARD      = (22, 36,  72)
     DIVIDER   = (35, 55,  100)
 
-    WHITE     = (255, 255, 255)
+    WHITE     = (240, 225, 195)   # warm oats cream — 14.4:1 on BG, 11.8:1 on CARD ✓
     LIGHT     = (196, 212, 238)
     DIM       = (105, 130, 172)
 
@@ -65,6 +66,49 @@ class C:
     # C.PURPLE on CARD = 3.59:1 (fail) → PURP_AA = 5.32:1 (pass)
     BLUE_AA   = (100, 165, 255)
     PURP_AA   = (170, 130, 255)
+
+    # Gradient end colors (used by slide 1 and slide 5)
+    GRAD1_END = (12,  22,  55)
+    GRAD5_END = ( 5,  10,  32)
+
+
+class CL:
+    """Warm-oats light theme — WCAG AA verified on all warm backgrounds.
+
+    Background luminances: BG≈0.941  PANEL≈0.872  CARD≈0.784
+    All text contrast ratios against the background each colour touches:
+      WHITE  on BG/PANEL/CARD  → 16.2 / 14.4 / 12.9 : 1  ✓
+      LIGHT  on BG/PANEL/CARD  →  8.8 /  7.8 /  7.0 : 1  ✓
+      DIM    on BG/PANEL/CARD  →  6.6 /  5.9 /  5.3 : 1  ✓ (normal text)
+      BLUE   on BG/CARD        →  6.0 /  5.0 : 1          ✓
+      CYAN   on BG/CARD        →  5.5 /  4.6 : 1          ✓
+      GREEN  on BG/CARD (large)→  5.2 / 4.4:1 — only used ≥14pt bold (3:1)  ✓
+      ORANGE on BG/CARD        →  5.7 /  4.8 : 1          ✓
+      PURPLE on BG/CARD        →  7.0 /  5.9 : 1          ✓
+      RED    on BG              →  6.2 : 1                 ✓
+    """
+    BG       = (252, 248, 240)   # warm oats background
+    PANEL    = (244, 238, 226)   # warm oats panel
+    CARD     = (236, 228, 212)   # warm oats card
+    DIVIDER  = (180, 165, 140)   # warm divider
+
+    WHITE    = ( 35,  26,  10)   # warm near-black primary text — 16.2:1 on BG ✓
+    LIGHT    = ( 85,  68,  44)   # warm brown secondary text — 8.8:1 on BG, 7.0:1 on CARD ✓
+    DIM      = (105,  86,  60)   # warm muted label text — 6.6:1 on BG, 5.3:1 on CARD ✓
+
+    BLUE     = ( 20,  90, 200)   # 6.0:1 on BG, 5.0:1 on CARD ✓
+    CYAN     = (  0, 110, 140)   # 5.5:1 on BG, 4.6:1 on CARD ✓
+    GREEN    = (  0, 120,  75)   # 5.2:1 on BG; on CARD only at ≥14pt bold (3:1 needed) ✓
+    ORANGE   = (160,  75,   0)   # 5.7:1 on BG, 4.8:1 on CARD ✓
+    PURPLE   = (110,  40, 200)   # 7.0:1 on BG, 5.9:1 on CARD ✓
+    RED      = (180,  30,  30)   # 6.2:1 on BG ✓
+
+    # On warm CARD all dark accents already pass 4.5:1; same value as base colour
+    BLUE_AA  = ( 20,  90, 200)
+    PURP_AA  = (110,  40, 200)
+
+    GRAD1_END = (248, 244, 234)   # warm gradient end for slide 1
+    GRAD5_END = (250, 246, 236)   # warm gradient end for slide 5
 
 
 # ── Primitive helpers ──────────────────────────────────────────────────────────
@@ -116,7 +160,10 @@ def rrect(slide, x, y, w, h, fill, border=None, bw=1.0):
 
 
 def txt(slide, text: str, x, y, w, h, size=18, bold=False,
-        color=C.WHITE, align=PP_ALIGN.LEFT, font="Calibri", wrap=True):
+        color=None, align=PP_ALIGN.LEFT, font="Calibri", wrap=False):
+    """color defaults to C.WHITE resolved at call time so theme-swap works correctly."""
+    if color is None:
+        color = C.WHITE
     tb = slide.shapes.add_textbox(x, y, w, h)
     tf = tb.text_frame
     tf.word_wrap = wrap
@@ -208,7 +255,7 @@ def video_or_placeholder(slide, video_path, x, y, w, h, label, color):
 
 def slide_title(prs: Presentation):
     sl = _blank(prs)
-    bg_grad(sl, C.BG, (12, 22, 55), angle=135)
+    bg_grad(sl, C.BG, C.GRAD1_END, angle=135)
 
     # Left — hero text
     vbar(sl, Inches(0.55), Inches(1.85), Inches(3.2), color=C.BLUE)
@@ -306,7 +353,7 @@ def slide_problem(prs: Presentation):
         txt(sl, title, cl + Inches(0.15), py + Inches(0.1), cw - Inches(0.2), Inches(0.42),
             size=15, bold=True, color=C.WHITE)
         txt(sl, desc, cl + Inches(0.15), py + Inches(0.56), cw - Inches(0.2), Inches(0.62),
-            size=13, color=C.LIGHT)
+            size=13, color=C.LIGHT, wrap=True)
         py += Inches(1.48)
 
     # Right — Karpathy's Insight
@@ -390,7 +437,7 @@ def slide_architecture(prs: Presentation):
         txt(sl, label, bx, box_y + Inches(0.14), box_w, Inches(0.52),
             size=17, bold=True, color=color, align=PP_ALIGN.CENTER)
         txt(sl, desc, bx + Inches(0.2), box_y + Inches(0.82), box_w - Inches(0.4), Inches(1.85),
-            size=14, color=C.LIGHT)
+            size=14, color=C.LIGHT, wrap=True)
         if i < 2:
             ax = bx + box_w + Inches(0.06)
             txt(sl, "→", ax, box_y + Inches(1.1), Inches(0.36), Inches(0.55),
@@ -457,14 +504,14 @@ def slide_implementation(prs: Presentation):
 
     cl, cr, cw = Inches(0.55), Inches(7.0), Inches(5.72)
     col_top, col_h = Inches(1.5), Inches(4.45)   # col bottom = 5.95"
-    # Layout constants — both columns use the same cmd_w/desc geometry so
-    # the longest command (/regenerate-presentation, 24 mono chars) fits on one line.
-    # desc_w is sized so no description exceeds 35 chars at 11pt (one line, no clipping).
-    row_sp  = Inches(0.34)   # row pitch: 7 wiki + divider + 3 maint fits in col_h=4.45"
-    cmd_h   = Inches(0.30)   # single-line text box height for 11pt text
-    cmd_w   = Inches(2.30)   # fits "/regenerate-presentation" (24 mono chars) @ 11pt
-    desc_off = Inches(2.55)  # desc_x = col_x + desc_off  (0.10" gap after cmd_w)
-    desc_w  = Inches(3.0)    # ≤ 35 chars @ 11pt prop fits on one line without wrapping
+    # Layout constants — both columns use the same cmd_w/desc geometry.
+    # cmd_w=2.65" fits "/regenerate-presentation" (24 Courier New 11pt mono chars, ~0.10"/char).
+    # desc_w=2.65" fits the longest description (≤35 Calibri 11pt chars).
+    row_sp   = Inches(0.33)   # row pitch: 7 wiki + divider + 3 maint fits in col_h=4.45"
+    cmd_h    = Inches(0.28)   # single-line text box height for 11pt text
+    cmd_w    = Inches(2.65)   # fits "/regenerate-presentation" comfortably @ Courier New 11pt
+    desc_off = Inches(2.90)   # desc_x = col_x + desc_off  (= 0.15 left + 2.65 cmd + 0.10 gap)
+    desc_w   = Inches(2.65)   # ≤ 35 Calibri 11pt chars (~0.06"/char avg) on one line
 
     # ── Claude Code CLI ────────────────────────────────────────────────────
     rrect(sl, cl, col_top, cw, col_h, C.CARD, border=C.ORANGE, bw=1.5)
@@ -484,7 +531,7 @@ def slide_implementation(prs: Presentation):
         ("/launch-wiki-ui",   "Start Streamlit query interface"),      # 31 chars
         ("/stop-wiki-ui",     "Stop the running Streamlit app"),       # 30 chars
     ]
-    cy = col_top + Inches(0.69)
+    cy = col_top + Inches(0.76)
     for cmd, desc in wiki_claude:
         txt(sl, cmd,  cl + Inches(0.15), cy, cmd_w,   cmd_h,
             size=11, bold=True, color=C.ORANGE, font="Courier New")
@@ -529,7 +576,7 @@ def slide_implementation(prs: Presentation):
         ("Launch Wiki UI",         "Start Streamlit query interface"),     # 31 chars
         ("Stop Wiki UI",           "Stop the running Streamlit app"),      # 30 chars
     ]
-    cy = col_top + Inches(0.69)
+    cy = col_top + Inches(0.76)
     for cmd, desc in wiki_copilot:
         txt(sl, cmd,  cr + Inches(0.15), cy, cmd_w,   cmd_h,
             size=11, bold=True, color=_BLUE_AA, font="Courier New")
@@ -567,7 +614,8 @@ def slide_implementation(prs: Presentation):
         Inches(2.6), Inches(0.28), size=10, color=C.LIGHT)   # DIM→LIGHT: 10.14:1
 
     feat_items = [
-        ("Multi-provider Q&A",        "Anthropic · OpenAI · Google · Mistral · Cohere"),
+        # sub-text capped at ~37 Calibri 11pt chars (~1.92") to fit 2.3" textbox on one line
+        ("Multi-provider Q&A",        "Anthropic · OpenAI · Google · Mistral"),
         ("Wiki-grounded answers",      "No hallucination outside wiki content"),
         ("API key + model validation", "Session memory — never saved to disk"),
         ("Explicit 'not found'",       "Clear signal when topic is outside wiki"),
@@ -576,8 +624,8 @@ def slide_implementation(prs: Presentation):
     for title, sub in feat_items:
         txt(sl, "· " + title, fx, band_y + Inches(0.10), Inches(2.3), Inches(0.36),
             size=12, bold=True, color=C.LIGHT)
-        txt(sl, sub, fx, band_y + Inches(0.56), Inches(2.3), Inches(0.28),
-            size=11, color=C.LIGHT)                           # 9pt DIM→11pt LIGHT: 10.14:1
+        txt(sl, sub, fx, band_y + Inches(0.54), Inches(2.3), Inches(0.36),
+            size=11, color=C.LIGHT, wrap=False)               # wrap=False prevents overflow clipping
         fx += Inches(2.35)
 
     notes(sl, """SPEAKER NOTES — SLIDE 4: IMPLEMENTATION
@@ -619,7 +667,7 @@ def slide_demo(prs: Presentation,
                terminal_video: Path | None = None,
                ui_video: Path | None = None):
     sl = _blank(prs)
-    bg_grad(sl, C.BG, (5, 10, 32), angle=135)
+    bg_grad(sl, C.BG, C.GRAD5_END, angle=135)
 
     txt(sl, "See It In Action",
         Inches(0.55), Inches(0.45), Inches(12.3), Inches(0.8),
@@ -724,24 +772,39 @@ def validate_layout(prs: Presentation) -> bool:
 
 
 def build_pptx(
-    output: Path = PPTX_OUT,
+    output: Path | None = None,
     terminal_video: Path | None = TERMINAL_VID,
     ui_video: Path | None = UI_VID,
+    theme=None,
 ) -> Path:
-    """Generate the full 5-slide PPTX deck."""
-    prs = Presentation()
-    prs.slide_width  = SLIDE_W
-    prs.slide_height = SLIDE_H
+    """Generate the full 5-slide PPTX deck.
 
-    slide_title(prs)
-    slide_problem(prs)
-    slide_architecture(prs)
-    slide_implementation(prs)
-    slide_demo(prs, terminal_video, ui_video)
+    theme: pass CL for the light theme; omit (or None) for the default dark theme.
+    Swaps the module-level C reference so all slide functions pick up the right colours
+    without any other changes.
+    """
+    global C
+    old_C = C
+    if theme is not None:
+        C = theme
+    if output is None:
+        output = PPTX_LIGHT_OUT if theme is not None else PPTX_OUT
+    try:
+        prs = Presentation()
+        prs.slide_width  = SLIDE_W
+        prs.slide_height = SLIDE_H
 
-    validate_layout(prs)
-    prs.save(str(output))
-    print(f"✓ PPTX  → {output}")
+        slide_title(prs)
+        slide_problem(prs)
+        slide_architecture(prs)
+        slide_implementation(prs)
+        slide_demo(prs, terminal_video, ui_video)
+
+        validate_layout(prs)
+        prs.save(str(output))
+        print(f"✓ PPTX  → {output}")
+    finally:
+        C = old_C
     return output
 
 
@@ -877,22 +940,25 @@ def main():
     ap.add_argument("--pptx",    action="store_true", help="PPTX only")
     ap.add_argument("--keynote", action="store_true", help="Keynote (macOS)")
     ap.add_argument("--slides",  action="store_true", help="Google Slides upload")
+    ap.add_argument("--light",   action="store_true", help="Light theme (WCAG AA)")
     args = ap.parse_args()
 
     all_fmt = not any([args.pptx, args.keynote, args.slides])
+    theme   = CL if args.light else None
 
     pptx_path = None
     if all_fmt or args.pptx:
-        pptx_path = build_pptx()
+        pptx_path = build_pptx(theme=theme)
 
+    default_pptx = PPTX_LIGHT_OUT if args.light else PPTX_OUT
     if all_fmt or args.keynote:
         if pptx_path is None:
-            pptx_path = PPTX_OUT
+            pptx_path = default_pptx
         convert_to_keynote(pptx_path)
 
     if all_fmt or args.slides:
         if pptx_path is None:
-            pptx_path = PPTX_OUT
+            pptx_path = default_pptx
         upload_to_google_slides(pptx_path)
 
 
