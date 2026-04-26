@@ -220,7 +220,20 @@ wiki/index.md ← 4 new entries    wiki/log.md ← 2 new rows
    ```bash
    streamlit run wiki_query.py
    ```
+
+   or run the start script
+
+    ```bash
+   sh ./start-wiki-ui.sh
+   ```
+
    The app opens at **http://localhost:8501**.
+
+4. Run from the project root, to stop the UI (if force stop required)
+
+ ```bash
+   sh ./stop-wiki-ui.sh
+   ```
 
 **Three-screen flow:**
 
