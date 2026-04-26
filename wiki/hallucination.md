@@ -1,56 +1,57 @@
 # Hallucination
 
-**Source:** "Training language models to follow instructions with human feedback" — Ouyang et al., OpenAI, 2022 (NeurIPS); also implicitly present in Brown et al. (2020) and Bommasani et al. (2021)
+The tendency of language models to generate plausible-sounding but factually incorrect or fabricated content.
 
 ## Summary
 
-Hallucination is the generation of text that is factually incorrect or contains information not present in the input, produced with apparent confidence. It is a direct consequence of the next-token prediction objective: language models are trained to produce plausible continuations of text, not to assert only what is true. Ouyang et al. measure [[gpt-3]]'s hallucination rate at 41% on closed-domain tasks, and show that [[rlhf]] fine-tuning ([[instructgpt]]) reduces this to 21%.
+Hallucination refers to outputs where a language model produces content that is fluent and confident but factually wrong, unsupported by context, or entirely fabricated. It is one of the most critical reliability failures of generative foundation models and has significant implications for deployment in high-stakes domains (healthcare, law, factual QA). Hallucination arises because LLMs are trained to maximize token-level likelihood, not factual accuracy — they learn to generate plausible continuations, not verified truths.
 
 ## Explanation
 
-**Two categories:**
+### Types of Hallucination
 
-1. **Closed-domain hallucination:** The model generates information that is not present in the input context, on tasks that require using only the provided input (summarization, closed-domain QA). Measured as a binary rate per response.
+**Intrinsic hallucination**: contradicts information provided in the input context (e.g., a model summarizes a document and invents facts not present).
 
-2. **Open-domain hallucination:** The model states factually false claims about the world. Measured via TruthfulQA (Lin et al., 2021) — a benchmark of 817 questions designed to elicit confident false answers from language models.
+**Extrinsic hallucination**: generates content that cannot be verified or is contradicted by external knowledge (e.g., inventing citations, fabricating statistics, attributing quotes incorrectly).
 
-**Root cause:**  
-The next-token prediction objective rewards a model for producing statistically likely text. If the training corpus contains false statements (internet text routinely does), the model can assign high probability to false continuations. The model has no mechanism to distinguish "what I believe is true" from "what I can predict." This is a fundamental misalignment between the training objective and truthful generation.
+### Why Models Hallucinate
 
-**Empirical measurements (Ouyang et al., 2022):**
+1. **Training objective mismatch**: Models maximize log-likelihood on training text, not factual accuracy. A model learns that "Albert Einstein said: 'The definition of insanity is...'" is a fluent pattern because it appears frequently in web text — even if the attribution is incorrect.
 
-| Metric | GPT-3 (175B) | InstructGPT (175B) |
-|--------|-------------|-------------------|
-| Closed-domain hallucination rate | 41% | 21% |
-| TruthfulQA truthfulness | baseline | ~2× higher |
-| TruthfulQA (with "I have no comment" option) | less likely to abstain | more likely to abstain than fabricate |
+2. **Knowledge cutoff**: Models have no access to information beyond their training data. Questions about recent events may trigger confident but incorrect responses.
 
-InstructGPT is able to say "I have no comment" when uncertain, rather than confidently fabricating an answer — a behavior elicited by RLHF fine-tuning without explicit task-specific training for abstention.
+3. **Ambiguous or underspecified prompts**: When the model lacks sufficient information to answer correctly, it still produces a high-probability completion rather than expressing uncertainty.
 
-**Why RLHF reduces hallucination:**  
-Human labelers penalize responses that appear to fabricate information. The [[reward-model]] learns to assign lower scores to hallucinated outputs, and [[rlhf]] fine-tuning optimizes against this. This is a form of indirect supervision: the training objective does not explicitly distinguish true from false, but human preferences do.
+4. **Exposure bias**: Autoregressive models condition on their own previous outputs. Errors in early tokens compound.
 
-**Limitations of hallucination reduction:**  
-- InstructGPT still hallucinates — 21% is a significant improvement over 41%, but not zero
-- [[instructgpt]] will follow user instructions even to be misleading; when explicitly prompted to generate biased or false content, it does so more reliably than GPT-3
-- TruthfulQA captures only questions that were adversarially selected to elicit falsehoods; real-world hallucination may differ
-- The root cause (misalignment between LM objective and truthfulness) is not resolved; RLHF treats a symptom
+### Connection to Evaluation
 
-**Connection to alignment:**  
-Hallucination is one of three core misalignment failure modes identified in the HHH framework (Askell et al., 2021): models should be **honest** (not fabricate or mislead). Hallucination is the primary manifestation of dishonesty in current LMs, and measuring and reducing it is a central alignment goal.
+Bommasani et al. (2022) highlight that hallucination makes foundation model evaluation difficult: standard benchmarks often have closed-form correct answers, but real-world deployment involves open-ended generation where hallucination detection is much harder.
 
-## Contradictions / Tensions Across Papers
+### Mitigation Strategies
 
-- **vs. Vaswani et al. (2017) and Devlin et al. (2019):** Neither the Transformer nor BERT papers discuss hallucination. Both assume models are evaluated on tasks with ground-truth labels, where hallucination cannot occur. Ouyang et al. identify hallucination as a first-class problem when LMs are deployed on open-ended generative tasks.
-- **vs. Brown et al. (2020):** GPT-3 acknowledges that larger models may produce more confident incorrect text, but does not measure hallucination rates directly. Ouyang et al. provide the first systematic measurement (41% rate) on closed-domain tasks.
-- **vs. Bommasani et al. (2021):** The FMs paper identifies hallucination as a risk from misaligned training objectives, but frames it as a future challenge. InstructGPT demonstrates that RLHF substantially reduces it in practice (41% → 21%), a much faster resolution than implied.
+- **Retrieval-Augmented Generation (RAG)**: ground model outputs in retrieved documents
+- **RLHF**: fine-tuning with human feedback penalizing incorrect responses
+- **Chain-of-thought prompting**: encouraging step-by-step reasoning can improve factual accuracy
+- **Calibrated confidence**: training models to express uncertainty rather than confabulate
 
 ## Related Concepts
 
-- [[rlhf]]
-- [[instructgpt]]
-- [[reward-model]]
-- [[ai-safety-alignment]]
-- [[gpt-3]]
-- [[autoregressive-language-model]]
-- [[distribution-shift]]
+- [[foundation-model]] — Hallucination is a key failure mode of generative foundation models
+- [[rlhf]] — A training technique that can reduce (but not eliminate) hallucination
+- [[instructgpt]] — RLHF-trained model specifically targeting helpfulness and honesty
+- [[ai-safety-alignment]] — Hallucination is an alignment failure (model output ≠ correct/intended output)
+- [[in-context-learning]] — RAG and few-shot prompting are partial mitigations
+
+## Stale Claims
+
+This page relies solely on Bommasani et al. (2022). Hallucination research has moved rapidly post-2022 (TruthfulQA benchmark, factuality probing, RAG systems, calibration training). When newer sources are added to `/raw`, update the mitigation strategies and add a post-2022 citation.
+
+## Sources
+
+- Bommasani et al. — "On the Opportunities and Risks of Foundation Models" (2022) — Sections 4.4, 5.2
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

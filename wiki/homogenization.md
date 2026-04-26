@@ -1,50 +1,55 @@
 # Homogenization
 
-**Source:** "On the Opportunities and Risks of Foundation Models" — Bommasani et al., Stanford CRFM, 2021
+The consolidation of AI system development around a small number of foundation models, creating shared capabilities but also shared failure modes.
 
 ## Summary
 
-Homogenization is the consolidation of methodologies and, increasingly, the actual models used across AI research and applications. It is one of two defining properties of [[foundation-model]]s (alongside [[emergence]]). Homogenization provides strong leverage — any improvement to the foundation model benefits all downstream applications simultaneously — but also creates systemic single points of failure.
+Homogenization (Bommasani et al., 2022) describes how the rise of foundation models has led to a convergence in NLP: most state-of-the-art systems now derive from a small number of pre-trained models (BERT, GPT, etc.). This creates powerful leverage — improvements to foundation models instantly benefit many downstream systems — but also a critical liability: the biases, errors, and failure modes of foundation models are inherited by all models adapted from them, creating systemic single points of failure.
 
 ## Explanation
 
-**Historical progression of homogenization in AI:**
+### Historical Trajectory of Homogenization
 
-| Era             | What is homogenized                                |
-|-----------------|----------------------------------------------------|
-| Machine learning | Learning algorithms (e.g., logistic regression)  |
-| Deep learning   | Model architectures (e.g., CNNs)                 |
-| Foundation models | The model itself (e.g., BERT, GPT-3)           |
+Bommasani et al. trace homogenization through AI's history:
+- **Machine learning** homogenized *learning algorithms* (e.g., logistic regression, SVMs)
+- **Deep learning** homogenized *architectures* (e.g., CNNs for vision, RNNs for text)
+- **Foundation models** homogenize the *models themselves* (e.g., BERT, GPT-3)
 
-**Homogenization of models:**  
-As of 2021, almost all state-of-the-art NLP models are adapted from a small number of foundation models (BERT, RoBERTa, T5, BART). The same [[transformer]]-based sequence modeling approach is applied across text, images, speech, tabular data, protein sequences, molecules, and reinforcement learning — suggesting convergence toward a unified paradigm across research communities.
+Each step represents increasing leverage — and increasing risk concentration.
 
-**The leverage-liability duality:**
-- *Leverage:* improvements to a foundation model propagate immediately to all downstream adapted models
-- *Liability:* defects of the foundation model (biases, failure modes, security vulnerabilities) are blindly inherited by all adapted derivatives
+### Benefits of Homogenization
 
-**Interaction with [[emergence]]:**  
-Homogenization is particularly risky when combined with emergence: since emergent capabilities and failures are not fully predictable, aggressively homogenizing around a model whose behavior is not fully characterized is a high-stakes bet.
+- **Efficient knowledge transfer**: improvements to BERT immediately improve all BERT-based systems across NLP benchmarks and applications (Google Search, Bing, etc.)
+- **Reduced redundancy**: organizations don't need to train models from scratch for each task
+- **Research leverage**: studying one foundation model generates insights applicable to many downstream uses
 
-**Concentration effects:**  
-Foundation model training is accessible only to large organizations (Google, Microsoft, Meta, OpenAI, Anthropic). This creates:
-- A barrier-to-entry that is rising, not falling
-- A concentration of power over the models that underlie most AI systems
-- Limited academic ability to study or improve foundation models at their actual scale of operation
+### Risks of Homogenization
 
-**Homogenization across research communities:**  
-Transformer-based approaches are now applied to: text (BERT, GPT), images (ViT), speech (wav2vec), tabular data, protein sequences (ESM), molecules, and reinforcement learning (Decision Transformer). Multimodal models (CLIP, DALL-E) further blur the boundaries.
+- **Inherited biases**: if a foundation model encodes gender bias or racial stereotypes, these propagate to all downstream systems — amplified by deployment at scale
+- **Single point of failure**: a security vulnerability or adversarial attack on a foundation model compromises all systems built on it
+- **Epistemic uniformity**: when all systems derive from the same models, they have correlated failures; diversity of approaches is lost
+- **Power concentration**: few organizations (Google, OpenAI, Meta, Anthropic) develop the foundation models that everyone else depends on
 
-## Contradictions with Prior Papers
+### Relationship to Emergence
 
-- **vs. Devlin et al. (2019):** The BERT paper presents fine-tuning as uniformly beneficial ("reduce the need for many heavily-engineered task-specific architectures"). Bommasani et al. argue this homogenization effect is simultaneously a strength *and* a liability — biases and failures in BERT propagate to all BERT-derived systems, a concern the BERT paper does not address.
-- **vs. Vaswani et al. (2017):** The Transformer paper does not discuss the societal implications of architectural homogenization. Bommasani et al. argue the [[transformer]]'s dominance is itself a form of homogenization that centralizes both the capabilities and the risks of AI systems.
+Homogenization amplifies both the benefits and risks of [[emergence]]:
+- Emergent capabilities spread instantly across all downstream applications (beneficial)
+- Emergent failure modes also spread instantly (dangerous)
+- The uncertainty of emergence, combined with homogenization's leverage, means we may be deploying systems with unknown capabilities at enormous scale
 
 ## Related Concepts
 
-- [[foundation-model]]
-- [[emergence]]
-- [[scaling-laws]]
-- [[adaptation]]
-- [[bert]]
-- [[transformer]]
+- [[foundation-model]] — Homogenization is one of two defining properties
+- [[emergence]] — The other defining property; its effects are amplified by homogenization
+- [[ai-safety-alignment]] — Homogenization makes alignment especially critical (one model → many harms)
+- [[distribution-shift]] — Shared training data means shared distribution assumptions across all downstream models
+- [[hallucination]] — If a foundation model consistently hallucinates on certain topics, all derived models may too
+
+## Sources
+
+- Bommasani et al. — "On the Opportunities and Risks of Foundation Models" (2022) — Section 1.1
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

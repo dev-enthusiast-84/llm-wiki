@@ -1,55 +1,66 @@
 # Autoregressive Language Model
 
-**Source:** "Language Models are Few-Shot Learners" — Brown et al., OpenAI, 2020 (NeurIPS)  
-**Background:** Standard LM formulation predates this paper; GPT-3 is the primary example at scale.
+A language model that generates text by predicting one token at a time, left-to-right, conditioned on all previously generated tokens.
 
 ## Summary
 
-An autoregressive language model (ALM) assigns probability to a token sequence by factoring it left-to-right: P(x₁, ..., xₙ) = ∏ P(xₜ | x₁, ..., xₜ₋₁). Each token is predicted from all *preceding* tokens only, making the representation causal and unidirectional. GPT-3 (175B) is the largest and most capable autoregressive LM at publication.
+Autoregressive language models (AR-LMs) define a probability distribution over sequences by factoring the joint probability as a product of conditional distributions: $p(x) = \prod_t p(x_t | x_{<t})$. At each step, the model predicts the next token given all previous tokens. This approach powers GPT-3, LLaMA, and most current large language models. It is the natural paradigm for text generation, though it provides only left-to-right (causal) context, in contrast to bidirectional models like BERT.
 
 ## Explanation
 
-**Objective:**  
-Training maximizes the log-likelihood of each token in the corpus given its left context:
+### Probability Factorization
 
-```
-L = Σₜ log P(xₜ | x₁, ..., xₜ₋₁; θ)
-```
+$$p(x_1, \ldots, x_n) = \prod_{t=1}^{n} p(x_t \mid x_1, \ldots, x_{t-1})$$
 
-Every token in the training sequence contributes a prediction signal, making training highly efficient per-pass compared to [[masked-language-model]], which only predicts ~15% of tokens.
+Each factor is a categorical distribution over the vocabulary. The model is trained to minimize the negative log-likelihood (cross-entropy) over all tokens:
 
-**Implementation in the Transformer:**  
-Autoregressive LMs use the *decoder* half of the [[transformer]] with causal (masked) [[self-attention]] — each position can only attend leftward. This is the same masked self-attention used in the [[transformer]] decoder for auto-regressive generation.
+$$\mathcal{L} = -\sum_t \log p(x_t \mid x_{<t})$$
 
-**Contrast with masked language modeling:**
+### Architecture: Decoder-Only Transformer
 
-| Property                  | Autoregressive LM (GPT-3)       | Masked LM ([[bert]])             |
-|---------------------------|----------------------------------|----------------------------------|
-| Directionality            | Left-to-right (causal)           | Bidirectional                    |
-| % tokens predicted/pass   | 100%                             | ~15%                             |
-| Can see future tokens?    | No                               | Yes (except masked positions)    |
-| Primary use               | Generation, few-shot inference   | Classification, understanding    |
-| Fine-tuning needed?       | No (ICL), though possible        | Yes (standard BERT paradigm)     |
+Modern AR-LMs use decoder-only Transformers with causal (masked) self-attention:
+- Position $i$ can only attend to positions $\leq i$
+- This is implemented by masking future positions to $-\infty$ before softmax
+- All positions are processed in parallel during training; generation is sequential (one token at a time)
 
-**Why scale matters:**  
-The GPT-3 paper shows that autoregressive LMs acquire [[in-context-learning]] as an [[emergence|emergent]] capability at scale. GPT-2 (1.5B) showed only weak few-shot performance; GPT-3 (175B) demonstrates robust zero/one/few-shot adaptation across diverse tasks. This is consistent with [[scaling-laws]]: capability improves smoothly as parameters and compute increase, but qualitative emergence (ICL) appears discontinuously.
+### Training Signal
 
-**Limitation — unidirectionality:**  
-Because each token only sees its left context, autoregressive models cannot directly compare two spans or look back. GPT-3's authors explicitly acknowledge this as a structural weakness for tasks requiring bidirectional comparison (NLI, WIC, RACE). Bidirectional models like [[bert]] handle these tasks better when fine-tuned. GPT-3 partially compensates with scale, but remains weaker on comparison-heavy benchmarks.
+Every token in the training sequence is a label: the model predicts token $t$ from tokens $1, \ldots, t-1$. This means 100% of tokens contribute training signal (vs. BERT's 15% masked tokens). With trillions of training tokens, this provides an enormous amount of supervision.
 
-## Contradictions / Tensions Across Papers
+### Generation
 
-- **vs. Devlin et al. (2019):** The BERT paper argues that purely autoregressive (left-to-right) language model pre-training is "fundamentally limited" for understanding tasks because it prevents bidirectional context. GPT-3 demonstrates that at 175B scale, autoregressive pre-training alone enables competitive NLU performance in few-shot settings, weakening (without fully refuting) BERT's claim.
-- **vs. Bommasani et al. (2021):** The FMs paper lists both autoregressive models (GPT-3) and masked/discriminative models (BERT, ELECTRA) as instances of [[self-supervised-learning]], treating the unidirectional vs. bidirectional distinction as an architectural choice within a larger SSL taxonomy rather than a fundamental divide.
+At inference, tokens are generated autoregressively:
+1. Start with a prompt
+2. Predict next-token distribution
+3. Sample (or argmax/beam search) a token
+4. Append to context, repeat
+
+Different decoding strategies (temperature sampling, top-k, top-p/nucleus, beam search) trade off diversity and coherence.
+
+### Contrast with Masked Language Models
+
+| Property | Autoregressive (GPT) | Masked (BERT) |
+|----------|---------------------|---------------|
+| Context direction | Left-to-right only | Bidirectional |
+| Pre-training signal | All tokens | ~15% masked tokens |
+| Best for | Generation | Understanding/classification |
+| Can generate text? | Yes | No (not natively) |
 
 ## Related Concepts
 
-- [[gpt-3]]
-- [[self-supervised-learning]]
-- [[masked-language-model]]
-- [[transformer]]
-- [[self-attention]]
-- [[in-context-learning]]
-- [[scaling-laws]]
-- [[byte-pair-encoding]]
-- [[data-contamination]]
+- [[gpt-3]] — The largest and most studied autoregressive language model at time of publication
+- [[transformer]] — Uses a decoder-only Transformer with causal masking
+- [[masked-language-model]] — The contrasting approach used by BERT
+- [[in-context-learning]] — Emerges from large-scale autoregressive pre-training
+- [[scaling-laws]] — Loss follows a power law as function of model size and compute
+- [[foundation-model]] — Most modern foundation models for generation are autoregressive
+
+## Sources
+
+- Brown et al. — "Language Models are Few-Shot Learners" (2020) — Section 2.1
+- Bommasani et al. — "On the Opportunities and Risks of Foundation Models" (2022)
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

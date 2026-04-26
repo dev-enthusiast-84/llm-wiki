@@ -1,50 +1,58 @@
 # Self-Attention
 
-**Source:** "Attention Is All You Need" — Vaswani et al., 2017 (NIPS)
+An attention mechanism where a sequence attends to itself — each position can directly access information from every other position.
 
 ## Summary
 
-Self-attention (also called intra-attention) is an attention mechanism that relates different positions within a single sequence to compute a representation of that sequence. It is the core building block of the [[transformer]].
+Self-attention (also called intra-attention) allows every token in a sequence to compute a weighted combination of all other tokens, capturing dependencies regardless of distance. It is the core mechanism behind Transformers and replaces the sequential processing of RNNs, enabling parallelization. Each position produces three vectors — Query, Key, Value — and the output is a weighted sum of Values where weights come from Query-Key similarity.
 
 ## Explanation
 
-In a self-attention layer, queries, keys, and values all come from the same source — the output of the previous layer. Each position can attend to every other position in the same sequence, capturing global dependencies in O(1) sequential operations.
+### Intuition
 
-**Comparison with other layer types (sequence length n, dimension d):**
+In a sentence like "The animal didn't cross the street because **it** was too tired," self-attention lets the model resolve that "it" refers to "animal" by directly attending to it across the sequence — something RNNs could only achieve by propagating state through many steps.
 
-| Layer Type         | Complexity/Layer | Sequential Ops | Max Path Length |
-|--------------------|-----------------|----------------|-----------------|
-| Self-Attention     | O(n² · d)       | O(1)           | O(1)            |
-| Recurrent (RNN)    | O(n · d²)       | O(n)           | O(n)            |
-| Convolutional      | O(k · n · d²)   | O(1)           | O(log_k(n))     |
+### Mechanism
 
-Self-attention is faster than recurrence when sequence length n < representation dimension d, which is typical in NLP (word-piece / BPE representations).
+Each input token $x_i$ is projected into three vectors:
+- **Query** $Q = xW^Q$: what this token is "looking for"
+- **Key** $K = xW^K$: what this token "advertises"
+- **Value** $V = xW^V$: the actual content to be aggregated
 
-**Three uses in the [[transformer]]:**
-1. **Encoder self-attention** — every position attends to all positions in the previous encoder layer
-2. **Decoder masked self-attention** — each position attends only to positions ≤ its own (masked to preserve auto-regressive property)
-3. **Encoder-decoder attention** — decoder queries attend to all encoder output positions
+Attention scores between all pairs are computed, scaled, softmaxed, and used to weight the Values:
+$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
 
-A notable side benefit: self-attention can yield more interpretable models — individual heads exhibit behavior related to syntactic and semantic sentence structure (e.g., anaphora resolution, long-distance verb dependencies).
+### Computational Properties
 
-## Contradictions / Tensions Across Papers
+| Property | Self-Attention | Recurrent |
+|----------|---------------|-----------|
+| Complexity per layer | O(n²·d) | O(n·d²) |
+| Sequential operations | O(1) | O(n) |
+| Max path length | O(1) | O(n) |
 
-**From Bommasani et al. (2021):**
-- **Quadratic complexity is a real bottleneck:** This paper's Table 1 notes self-attention is O(n²·d) per layer, which the authors frame as acceptable given NLP sequence lengths. Bommasani et al. identify this as a fundamental constraint for long-sequence tasks (documents, high-resolution images, genomics). Two distinct families of solutions have emerged:
-  - **Sparse/linear-complexity attention** — reduce the O(n²) cost within the attention operation itself:
-    - *Longformer / BigBird / Sparse Transformer* — attend only to a sparse subset of positions (local window + global tokens)
-    - *Perceiver / GANformer* — route input through a small bottleneck or bipartite structure to achieve O(n) complexity
-  - **Retrieval-augmented models** (REALM, RAG, RETRO) — a structurally different approach: offload long-range knowledge storage to an *external index* queried at inference time, reducing the context that the Transformer must attend over. These do not modify the attention operation itself but sidestep the need for very long context windows.
+Self-attention scales quadratically with sequence length but connects all positions in constant sequential steps, making long-range dependency learning tractable.
 
-- **Directionality:** The [[transformer]] decoder uses causal (left-to-right) self-attention by design, treating unidirectionality as a prerequisite for auto-regressive generation. [[bert]]'s ablations (Table 5) demonstrate that for *understanding* tasks, bidirectional self-attention learned via [[masked-language-model]] outperforms left-to-right self-attention across every benchmark tested. The two papers are not strictly contradictory — one optimizes for generation, the other for understanding — but they represent different design philosophies about what "correct" self-attention looks like.
+### Applications in the Transformer
+
+The Transformer uses self-attention in three distinct ways:
+1. **Encoder self-attention**: Each encoder position attends to all encoder positions
+2. **Decoder self-attention (masked)**: Positions attend only to earlier positions (causal masking, setting future positions to −∞)
+3. **Cross-attention**: Decoder queries attend to encoder keys/values
 
 ## Related Concepts
 
-- [[multi-head-attention]]
-- [[scaled-dot-product-attention]]
-- [[transformer]]
-- [[encoder-decoder]]
-- [[positional-encoding]]
-- [[bert]]
-- [[masked-language-model]]
-- [[foundation-model]]
+- [[scaled-dot-product-attention]] — The specific computation inside self-attention
+- [[multi-head-attention]] — Runs multiple self-attention operations in parallel
+- [[transformer]] — Architecture that uses self-attention as its core building block
+- [[positional-encoding]] — Required because self-attention is permutation-invariant
+- [[encoder-decoder]] — How self-attention fits into the full model structure
+
+## Sources
+
+- Vaswani et al. — "Attention Is All You Need" (2017) — Sections 3.2, 4
+- Wikipedia — "Transformer (deep learning)" — Attention mechanism section
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

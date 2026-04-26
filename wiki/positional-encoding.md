@@ -1,41 +1,50 @@
 # Positional Encoding
 
-**Source:** "Attention Is All You Need" — Vaswani et al., 2017 (NIPS)
+Information added to token embeddings to give the Transformer awareness of token order, since attention itself is permutation-invariant.
 
 ## Summary
 
-Positional encoding injects information about token order into the [[transformer]], which has no inherent notion of sequence position because [[self-attention]] treats all positions symmetrically.
+Self-attention has no inherent notion of sequence order — it treats inputs as a set, not a sequence. Positional encodings inject position information by adding a fixed or learned vector to each token embedding before the first layer. The original Transformer uses sinusoidal functions of different frequencies so that the model can learn to attend by relative positions, and so that encodings can extrapolate to sequence lengths unseen during training.
 
 ## Explanation
 
-Since the [[transformer]] contains no recurrence and no convolution, it cannot distinguish token order without explicit positional signals. Positional encodings are added to input embeddings at the bottom of both the encoder and decoder stacks.
+### Sinusoidal Positional Encoding
 
-**Sinusoidal positional encoding (used in the paper):**
+The original formulation uses sine and cosine functions:
 
-```
-PE(pos, 2i)   = sin(pos / 10000^(2i / d_model))
-PE(pos, 2i+1) = cos(pos / 10000^(2i / d_model))
-```
+$$PE_{(pos, 2i)} = \sin\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)$$
+$$PE_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)$$
 
-- `pos`: position in sequence
-- `i`: dimension index
-- Each dimension corresponds to a sinusoid with a different frequency
-- Wavelengths form a geometric progression from 2π to 10000·2π
+Where $pos$ is the position in the sequence and $i$ is the dimension index. Each dimension corresponds to a sinusoid with wavelengths forming a geometric progression from $2\pi$ to $10000 \cdot 2\pi$.
 
-**Why sinusoidal?** For any fixed offset k, PE(pos+k) can be expressed as a linear function of PE(pos) — making it easy for the model to attend by relative positions. It also extrapolates naturally to sequence lengths longer than seen during training.
+### Why Sinusoidal?
 
-**Alternative: learned positional embeddings** were also tested (row E in Table 3) and produced nearly identical results. The sinusoidal version was chosen for its extrapolation property.
+The sinusoidal encoding has a useful property: for any fixed offset $k$, $PE_{pos+k}$ can be expressed as a linear function of $PE_{pos}$. This allows the model to easily learn to attend by relative offset. It also allows extrapolation beyond the training sequence length.
 
-Both encodings have the same dimensionality (d_model = 512) as the token embeddings, so they can be summed directly.
+### Learned vs. Fixed
 
-## Contradictions / Tensions Across Papers
+Vaswani et al. (2017) also experimented with learned positional embeddings (as used in BERT) and found nearly identical results. The sinusoidal version was chosen because it can extrapolate to longer sequences without retraining.
 
-- **Sinusoidal vs learned:** The [[transformer]] paper tests both sinusoidal and learned positional embeddings and finds them nearly identical (Table 3, row E). It recommends sinusoidal for its extrapolation property to longer sequences. [[bert]] uses **learned positional embeddings exclusively**, with a maximum sequence length of 512. During pre-training, BERT trains on sequences of length 128 for 90% of steps, then 512 for the remaining 10%, specifically to learn the position embeddings at longer lengths. This contradicts the Transformer paper's suggestion that sinusoidal encodings are preferable for length generalization — BERT treats length generalization as a non-issue given its fixed 512-token cap.
+The encodings are added (not concatenated) to token embeddings, so they must match $d_{\text{model}}$. The same encoding is added at both the encoder and decoder input layers.
+
+### Modern Variants
+
+- **Learned absolute** (BERT, GPT): trainable embedding per position
+- **Rotary (RoPE)**: encodes relative positions via rotation in complex space
+- **ALiBi**: adds a position bias directly to attention scores
+- **Relative position encoding**: encodes distance between token pairs rather than absolute positions
 
 ## Related Concepts
 
-- [[transformer]]
-- [[self-attention]]
-- [[encoder-decoder]]
-- [[bert]]
-- [[cls-sep-tokens]]
+- [[self-attention]] — Position-agnostic without this injection
+- [[transformer]] — Adds positional encoding to inputs before the encoder and decoder stacks
+- [[bert]] — Uses learned positional embeddings instead of sinusoidal
+
+## Sources
+
+- Vaswani et al. — "Attention Is All You Need" (2017) — Section 3.5
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

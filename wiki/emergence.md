@@ -1,53 +1,61 @@
 # Emergence
 
-**Source:** "On the Opportunities and Risks of Foundation Models" — Bommasani et al., Stanford CRFM, 2021
+The phenomenon where model capabilities are implicitly induced by training at scale rather than explicitly programmed.
 
 ## Summary
 
-Emergence describes capabilities that arise implicitly from scale and training dynamics rather than being explicitly designed or anticipated. It is one of two defining properties of [[foundation-model]]s (alongside [[homogenization]]). Emergent capabilities are the source of both scientific excitement and anxiety about unanticipated consequences.
+Emergence in AI means that a system exhibits behaviors and capabilities that were not directly trained for and could not be predicted simply by examining its training procedure. In foundation models, emergence refers to abilities like in-context learning, chain-of-thought reasoning, and arithmetic that appear surprisingly at sufficient model scale. Bommasani et al. (2022) identify emergence as a defining property of foundation models — it is both the source of their power (unexpected useful capabilities) and their risk (unexpected harmful behaviors).
 
 ## Explanation
 
-**Definition:**  
-A system exhibits emergence when its behavior is *implicitly induced* rather than *explicitly constructed*. In the context of foundation models, this means a model acquires capabilities that were neither specifically trained for nor anticipated to arise.
+### What Makes It "Emergence"?
 
-**Historical progression of emergence in AI:**
+A capability is emergent if:
+1. It was not directly supervised during training
+2. It arises from the interaction of scale and broad data rather than specific design choices
+3. It may appear suddenly (non-linearly) as a function of model scale
 
-| Era           | What emerges                                      |
-|---------------|--------------------------------------------------|
-| Machine learning | How to perform a task (induced from examples)  |
-| Deep learning | High-level features used for prediction          |
-| Foundation models | Advanced functionalities (e.g., in-context learning, arithmetic, code generation) |
+Example: GPT-3 was trained purely to predict the next token. In-context learning — the ability to perform translation, arithmetic, or question answering from a few examples without any gradient updates — was never explicitly trained for. It emerged as a side effect of learning from a sufficiently large and diverse corpus.
 
-**Canonical example — GPT-3:**  
-[[gpt-3]] (175B parameters) demonstrates [[in-context-learning]] — the ability to adapt to a new task given only a natural language prompt and a few examples. This capability was not present in GPT-2 (1.5B parameters), appeared only as "barest glimpses" in intermediate sizes, and was neither trained for nor anticipated by the model's designers.
+### Examples of Emergent Capabilities
 
-**Other documented emergent capabilities:**
-- Arithmetic (GPT-3 improves dramatically when commas are added to numbers in the input format)
-- Translation between language pairs not seen during training
-- Code generation and debugging
-- Multi-step logical reasoning
+| Capability | Emerges at approximately |
+|-----------|--------------------------|
+| In-context learning | ~100M–1B parameters |
+| Chain-of-thought reasoning | ~100B parameters |
+| Instruction following (basic) | ~100B parameters |
+| Multi-step arithmetic | ~175B parameters |
 
-**Why emergence creates risk:**  
-Emergent capabilities interact with [[homogenization]] in a potentially unsettling way:
-- Because capabilities arise implicitly, existing models are hard to fully characterize
-- Unknown failure modes may be inherited by all adapted models
-- Evaluation benchmarks cannot anticipate capabilities that have not yet been observed
-- Forecasting emergent behaviors at deployment time remains an open research problem
+These capabilities show phase-transition-like behavior: nearly absent at smaller scales, then suddenly effective at larger scales. This non-linearity makes them difficult to predict and raises questions about what capabilities might emerge in future (larger) models.
 
-**Emergent capabilities and scale:**  
-[[scaling-laws]] predict quantitative improvement (accuracy) reliably, but emergent *qualitative* capabilities (e.g., in-context learning) appear discontinuously and require sufficient scale to even observe. This limits the usefulness of academic-scale experiments for studying emergent behavior.
+### Emergence and Homogenization Interaction
 
-## Contradictions with Prior Papers
+Bommasani et al. note that emergence and homogenization interact in an "unsettling" way:
+- Emergent capabilities spread to all downstream applications via homogenization (beneficial)
+- Unexpected emergent failure modes also propagate to all downstream applications (risky)
+- The opacity of emergence means we cannot characterize what capabilities a model has until they are discovered
 
-- **vs. Vaswani et al. (2017):** The Transformer paper makes no mention of emergent properties; its framing is purely task-driven performance on translation benchmarks. Bommasani et al. argue that emergent capabilities are among the most important and least understood aspects of Transformer-based models at scale.
-- **vs. Devlin et al. (2019):** BERT was specifically designed for each pre-training objective (MLM, NSP) with clearly anticipated downstream tasks (NLU benchmarks). The concept that scale might produce *unanticipated* capabilities is absent from the BERT paper. Bommasani et al. cite BERT as the beginning of the foundation model era precisely because such emergent generality began appearing at BERT's scale.
+This creates a precautionary challenge: how do we safely deploy models whose full capability profiles are unknown?
+
+### Relationship to Scaling Laws
+
+Emergent capabilities don't always follow smooth scaling laws. While validation loss improves as a smooth power law with compute, specific capabilities can jump discontinuously. This means:
+- Log loss is a poor proxy for whether a capability exists
+- Evaluating foundation models requires probing many diverse tasks, not just loss
 
 ## Related Concepts
 
-- [[foundation-model]]
-- [[homogenization]]
-- [[in-context-learning]]
-- [[scaling-laws]]
-- [[ai-safety-alignment]]
-- [[self-supervised-learning]]
+- [[foundation-model]] — Emergence is one of two defining properties
+- [[homogenization]] — The other defining property; interacts with emergence
+- [[scaling-laws]] — Provides smooth metrics; emergent capabilities may not follow them smoothly
+- [[in-context-learning]] — The canonical example of an emergent capability in LLMs
+- [[gpt-3]] — The model that made emergence widely recognized in NLP
+
+## Sources
+
+- Bommasani et al. — "On the Opportunities and Risks of Foundation Models" (2022) — Section 1.1
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

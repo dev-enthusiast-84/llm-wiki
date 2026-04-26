@@ -1,78 +1,63 @@
-# Reinforcement Learning from Human Feedback (RLHF)
+# RLHF
 
-**Source:** "Training language models to follow instructions with human feedback" — Ouyang et al., OpenAI, 2022 (NeurIPS)  
-**Background technique:** Christiano et al., 2017 (originally applied to robotics and Atari games)
+Reinforcement Learning from Human Feedback — a three-stage training pipeline that aligns language models with human preferences.
 
 ## Summary
 
-RLHF is a three-step fine-tuning technique that aligns a pre-trained language model to user intent by using human preference comparisons as a reward signal. Applied to [[gpt-3]] by Ouyang et al. (2022), it produces [[instructgpt]] — a model that 40 human labelers prefer to the original GPT-3 85% of the time despite being identical in architecture. RLHF demonstrates that alignment is a tractable fine-tuning problem, not a fundamental barrier.
+RLHF (Reinforcement Learning from Human Feedback) is the primary practical technique for aligning large language models with human values and intentions. It works by first supervised-fine-tuning a base model on demonstrations, then training a reward model from human preference comparisons, and finally optimizing the LM against the reward model using PPO with a KL divergence penalty. InstructGPT (Ouyang et al., 2022) demonstrated that a 1.3B RLHF-trained model was preferred over a 175B GPT-3 baseline by human raters.
 
 ## Explanation
 
-**The three-step pipeline:**
+### The Three Stages
 
-**Step 1 — Supervised Fine-Tuning (SFT):**  
-Human labelers write demonstrations of desired model behavior for a diverse set of prompts. The pre-trained model is fine-tuned on these demonstrations using standard cross-entropy supervised learning.
-- Dataset: ~13,000 prompts (mix of labeler-written and real API prompts)
-- Labelers: ~40 contractors from Upwork/Scale AI, screened for sensitivity and agreement with researchers
-- Fine-tuning: 16 epochs, cosine LR decay, residual dropout 0.2
+**Stage 1: Supervised Fine-Tuning (SFT)**
+- Collect high-quality demonstration data: human labelers write ideal responses to prompts
+- Fine-tune the base language model on this data using standard cross-entropy loss
+- Result: an SFT model that can follow instructions but is not yet preference-optimized
 
-**Step 2 — Reward Model (RM) Training:**  
-Labelers rank K=4–9 model outputs for the same prompt, producing K-choose-2 comparison pairs. A [[reward-model]] is trained to predict which output human labelers prefer. Using comparison rankings (rather than absolute scores) is more reliable since humans judge relative quality more consistently than absolute quality.
-- Dataset: ~33,000 prompts
-- RM size: 6B parameters (smaller than 175B for training stability; see [[reward-model]])
-- Loss: log-sigmoid on reward difference between preferred and rejected completion
+**Stage 2: Reward Model (RM) Training**
+- Collect comparison data: the SFT model generates multiple responses to the same prompt; human raters rank them by quality
+- Train a separate reward model (initialized from the SFT model) to predict which response a human would prefer
+- The RM outputs a scalar quality score r(prompt, response)
+- Details: typically the final transformer layer is replaced by a scalar head; trained with a ranking loss (Bradley-Terry model)
 
-**Step 3 — Reinforcement Learning via PPO:**  
-The SFT model is fine-tuned using PPO (Proximal Policy Optimization; Schulman et al., 2017), with the reward model's scalar output as the reward signal. Two critical regularization mechanisms:
+**Stage 3: PPO Fine-Tuning**
+- Use the RM as a reward signal to fine-tune the SFT model via Proximal Policy Optimization (PPO)
+- Key constraint: KL divergence penalty between the RLHF model and the SFT model:
+  - `r_final = r_RM(prompt, response) - β · KL(π_RLHF || π_SFT)`
+  - The KL penalty (β ≈ 0.02 in InstructGPT) prevents the model from drifting too far from the SFT model and gaming the reward model
+- The policy (language model) is updated to maximize expected reward
 
-1. **KL penalty:** A per-token KL divergence penalty from the SFT model is added to the reward at each step, penalizing the RL policy for drifting too far from the SFT baseline. This prevents reward hacking — gaming the RM by generating superficially appealing but low-quality outputs.
+### Why the KL Penalty Matters
 
-2. **PPO-ptx (pretraining mix):** The PPO objective is augmented with pretraining log-likelihood gradients:
+Without the KL constraint, the LM would optimize for the reward model in degenerate ways — producing responses that score highly but are incoherent or harmful. This is called "reward hacking." The KL penalty keeps the output distribution close to the reference SFT model, maintaining fluency and factual grounding.
 
-```
-objective(φ) = E[r_θ(x,y) − β·log(π_RL(y|x) / π_SFT(y|x))] + γ·E[log π_RL(x)]
-```
+### DPO: A Simpler Alternative
 
-where β controls the KL penalty and γ controls the pretraining mix weight. PPO-ptx mitigates the **alignment tax** (performance regressions on public NLP benchmarks) without compromising labeler preference scores.
+Direct Preference Optimization (Rafailov et al., 2023) reformulates RLHF as a supervised learning problem — no separate reward model or RL loop required. Instead, preferences are used to directly update the LM parameters via a log-likelihood ratio objective. DPO achieves comparable alignment with simpler training.
 
-**Data collection:**  
-- SFT dataset: 13k prompts (labeler-written + real API)
-- RM dataset: 33k prompts (labeler rankings of K=4–9 outputs each)
-- PPO dataset: 31k prompts (API prompts only, used as environment inputs)
-- Prompt distribution (RM): 45.6% generation, 12.4% open QA, 11.2% brainstorming, 8.4% chat, 6.6% rewrite, 4.2% summarization — predominantly open-ended, not classification/QA
+### Alignment Properties
 
-**Evaluation — Helpful, Honest, Harmless (HHH):**  
-The paper uses the HHH framework (Askell et al., 2021) as an alignment target:
-- **Helpful:** follows instructions, infers intent from prompts
-- **Honest:** avoids fabricating information; measured via TruthfulQA and [[hallucination]] rate
-- **Harmless:** avoids toxic, biased, and harmful outputs
-
-**The alignment tax:**  
-By default, RLHF fine-tuning causes performance regressions on some public NLP benchmarks (SQuAD, DROP, HellaSwag, WMT FR→EN). This trade-off — improved alignment at the cost of benchmark performance — is called the alignment tax. PPO-ptx largely eliminates this regression. The alignment cost (4.9 petaflop/s-days for SFT, 60 for PPO-ptx) is a small fraction of pretraining cost (3,640 petaflop/s-days for GPT-3).
-
-**Who are we aligning to?**  
-The paper explicitly acknowledges that RLHF aligns to a *specific* group's preferences:
-- ~40 contractors (primarily English-speaking, US/Southeast Asia)
-- OpenAI researchers who wrote labeling instructions
-- OpenAI API customers whose prompts were collected
-- This is not representative of all users or global values — a fundamental limitation
-
-## Contradictions / Tensions Across Papers
-
-- **vs. Brown et al. (2020) — scale as primary lever:** GPT-3 demonstrates that scaling alone produces capable models via in-context learning. RLHF shows that a 1.3B InstructGPT is preferred over 175B GPT-3 (100× larger) — alignment fine-tuning is more impactful than a 100× parameter increase for user-facing instruction following.
-- **vs. Brown et al. (2020) — fine-tuning OOD risk:** GPT-3 argues fine-tuning risks poor out-of-distribution generalization. RLHF fine-tuning (InstructGPT) actually *improves* generalization to non-English instructions and code Q&A — tasks not explicitly supervised during RLHF fine-tuning.
-- **vs. Devlin et al. (2019) — supervised fine-tuning:** BERT-style fine-tuning uses task-specific labeled datasets. RLHF replaces task-specific labels with human preference comparisons, which are cheaper to collect and produce more human-aligned behavior across a broad task distribution.
-- **vs. Bommasani et al. (2021) — alignment as open problem:** Bommasani et al. present alignment as an unsolved challenge. RLHF provides an empirically validated, production-deployed solution — iterative, imperfect, but demonstrably effective and low-cost relative to pretraining.
+| Property | Pre-RLHF | Post-RLHF |
+|----------|-----------|-----------|
+| Instruction following | Poor | Strong |
+| Helpfulness | Variable | Improved |
+| Harmlessness | Variable | Improved |
+| Verbosity bias | Less | More (rater preference artifact) |
 
 ## Related Concepts
 
-- [[instructgpt]]
-- [[reward-model]]
-- [[gpt-3]]
-- [[adaptation]]
-- [[ai-safety-alignment]]
-- [[hallucination]]
-- [[in-context-learning]]
-- [[pre-training-fine-tuning]]
-- [[foundation-model]]
+- [[reward-model]] — The RM trained on human preference rankings; used as RLHF reward signal
+- [[instructgpt]] — The InstructGPT model that demonstrated RLHF's effectiveness at scale
+- [[ai-safety-alignment]] — RLHF is a primary practical alignment technique
+- [[hallucination]] — RLHF can reduce but not eliminate hallucination
+- [[gpt-3]] — Base model on which InstructGPT's RLHF was applied
+
+## Sources
+
+- Ouyang et al. — "Training language models to follow instructions with human feedback" (2022) — via rlhf-overview.docx
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

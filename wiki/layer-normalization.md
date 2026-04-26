@@ -1,38 +1,61 @@
 # Layer Normalization
 
-**Source:** "Attention Is All You Need" — Vaswani et al., 2017 (NIPS)  
-**Original paper:** Ba et al., "Layer Normalization", arXiv:1607.06450, 2016
+A normalization technique that standardizes activations across the feature dimension for each training example independently.
 
 ## Summary
 
-Layer normalization is applied after every sub-layer in the [[transformer]], combined with a [[residual-connection]], to stabilize training of deep networks.
+Layer Normalization (Ba et al., 2016) normalizes the inputs across the feature dimension (rather than across the batch) for each individual token position. In the Transformer, it is applied after every residual addition, stabilizing activations throughout the deep stack. Unlike Batch Normalization, it has no dependence on batch size, making it well-suited for variable-length sequences and small-batch training scenarios common in NLP.
 
 ## Explanation
 
-Every sub-layer in the [[transformer]] encoder and decoder is wrapped as:
+### Formula
 
+Given an input vector $x \in \mathbb{R}^{d}$:
+
+$$\text{LayerNorm}(x) = \frac{x - \mu}{\sigma + \epsilon} \odot \gamma + \beta$$
+
+Where:
+- $\mu = \frac{1}{d}\sum_{i=1}^d x_i$ — mean of the features
+- $\sigma = \sqrt{\frac{1}{d}\sum_{i=1}^d (x_i - \mu)^2}$ — standard deviation
+- $\gamma, \beta \in \mathbb{R}^d$ — learned scale and shift parameters
+- $\epsilon$ — small constant for numerical stability
+
+### Placement in the Transformer
+
+Used in the **Post-LN** convention (original Transformer):
 ```
-output = LayerNorm(x + Sublayer(x))
+Output = LayerNorm(x + Sublayer(x))
 ```
 
-This pattern (residual + norm) is applied uniformly to all sub-layers: [[multi-head-attention]] and [[feed-forward-network]] in the encoder, and all three sub-layers in the decoder.
+In the **Pre-LN** convention (most modern models):
+```
+Output = x + Sublayer(LayerNorm(x))
+```
 
-Layer normalization normalizes activations across the feature dimension (rather than the batch dimension as in batch normalization), making it well-suited for variable-length sequences and small batch sizes common in sequence modeling.
+Pre-LN is generally more stable during training, especially with large learning rates, and has become the standard in GPT-2 onward.
 
-**Why it matters for the Transformer:**  
-Deep stacks (N=6 layers, each with multiple sub-layers) can suffer from unstable gradients. LayerNorm helps gradients flow through the network during training, and is a prerequisite for the residual connection pattern to work effectively at this depth.
+### Contrast with Batch Normalization
 
-**Note:** The paper does not discuss layer normalization in detail — it cites Ba et al. (2016) and applies it as a standard component without ablation. Its importance was validated in subsequent work on Transformer variants (Pre-LN vs Post-LN).
-
-## Contradictions / Tensions Across Papers
-
-- **vs. Brown et al. (2020) — Pre-LN vs Post-LN:** The original Transformer uses Post-LN: `LayerNorm(x + Sublayer(x))` — normalization applied *after* the residual sum. [[gpt-3]] uses Pre-LN: `x + Sublayer(LayerNorm(x))` — normalization applied *before* each sublayer. At very large scale, Post-LN requires careful learning rate warm-up to avoid early training instability; Pre-LN avoids this and has become the standard in large models. The Transformer paper predates the scale at which this difference matters and does not evaluate it.
+| Property | Layer Norm | Batch Norm |
+|----------|-----------|-----------|
+| Normalized over | Feature dim (per example) | Batch dim (per feature) |
+| Depends on batch size | No | Yes |
+| Works with seq of varying length | Yes | Awkward |
+| Typical use | NLP, Transformers | Vision, CNNs |
 
 ## Related Concepts
 
-- [[residual-connection]]
-- [[transformer]]
-- [[encoder-decoder]]
-- [[feed-forward-network]]
-- [[multi-head-attention]]
-- [[gpt-3]]
+- [[transformer]] — Applies layer norm after every residual addition
+- [[residual-connection]] — Always paired with layer normalization
+- [[feed-forward-network]] — One sub-layer after which layer norm is applied
+- [[multi-head-attention]] — The other sub-layer after which layer norm is applied
+
+## Sources
+
+- Vaswani et al. — "Attention Is All You Need" (2017) — Section 3.1
+- Ba et al. — "Layer Normalization" (2016)
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

@@ -1,66 +1,69 @@
 # Pre-training and Fine-tuning
 
-**Source:** "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" — Devlin et al., 2019
+A two-stage transfer learning paradigm where a model is first trained broadly on unlabeled data, then adapted to specific tasks with labeled data.
 
 ## Summary
 
-The pre-train/fine-tune paradigm first trains a large model on unlabeled text with self-supervised objectives, then adapts the entire model to downstream tasks with labeled data. [[bert]] is the canonical example of this approach applied to NLP with a bidirectional [[transformer]] encoder.
+The pre-training/fine-tuning paradigm has become the dominant approach in modern NLP and foundation model research. In the pre-training phase, a large model trains on massive unlabeled corpora using self-supervised objectives (e.g., MLM, next-token prediction), learning general linguistic and world knowledge. In fine-tuning, this pre-trained model is adapted to a specific downstream task with a small labeled dataset, often with minimal architectural changes. This dramatically reduces the amount of task-specific data needed and achieves far better performance than training from scratch.
 
 ## Explanation
 
-**Two-stage framework:**
+### Why Pre-training Works
 
-**Stage 1 — Pre-training:**  
-The model is trained on massive unlabeled corpora using task-agnostic objectives ([[masked-language-model]] + [[next-sentence-prediction]]). This is expensive but done once; the resulting weights encode broad linguistic knowledge.
+Pre-trained models have already learned:
+- Syntax and morphology (from word prediction)
+- Semantic relationships (from context modeling)
+- World knowledge (from training on broad corpora)
+- General representations useful across many tasks
 
-**Stage 2 — Fine-tuning:**  
-The pre-trained weights initialize a task-specific model. A minimal output layer is added (e.g., a single linear layer). All parameters are fine-tuned end-to-end on labeled task data.
+Fine-tuning then steers these representations toward the specific task distribution, requiring far fewer labeled examples than training from scratch.
 
-Fine-tuning is cheap: all BERT results are replicable in ≤1 hour on a single Cloud TPU. Typical hyperparameters: batch size 16–32, learning rate 2e-5 to 5e-5, 2–4 epochs.
+### Fine-tuning Approaches for BERT
 
-**Contrast with feature-based approach (ELMo):**  
-ELMo extracts frozen contextual embeddings from a pre-trained model and uses them as features in a task-specific architecture. Fine-tuning (BERT's approach) updates all parameters jointly, which is empirically stronger — but feature-based extraction is useful when (a) the task requires architectures not expressible as a Transformer encoder, or (b) pre-computation of representations saves repeated inference cost.
+BERT fine-tunes end-to-end (all layers updated):
 
-Ablation (Table 7 — NER): Feature-based BERT (concatenating last 4 layers) reaches 96.1 dev F1, only 0.3 behind fine-tuning (96.4). Both beat prior SOTA.
+| Task Type | BERT Approach |
+|-----------|--------------|
+| Single-sentence classification | [CLS] → dense → softmax |
+| Sentence-pair classification (NLI) | [CLS] → dense → softmax |
+| Token labeling (NER) | Per-token → dense → softmax |
+| Span extraction (SQuAD) | Start/end position classifiers |
 
-**Task adaptation patterns:**
+Most fine-tuning runs for 2–4 epochs with learning rates of 2e-5 to 5e-5, completing in minutes to hours even on a single GPU.
 
-| Task type       | Input to BERT            | Prediction head              |
-|-----------------|--------------------------|------------------------------|
-| Classification  | [CLS] + single sentence  | Linear layer over [CLS]      |
-| Sentence pairs  | [CLS] + A + [SEP] + B    | Linear layer over [CLS]      |
-| Token labeling  | [CLS] + sequence         | Linear layer over each token |
-| QA span         | [CLS] + Q + [SEP] + P    | Start + end vector dot products |
+### GPT-style: Pre-training as the Paradigm
 
-**Unified architecture advantage:**  
-Because BERT uses [[self-attention]] to process concatenated pairs, it handles cross-sentence reasoning natively — no task-specific cross-attention module needed (unlike prior work such as BiDAF for QA).
+GPT-3 pushed this further: rather than fine-tuning (which still requires labeled data), it showed that a sufficiently large pre-trained model can perform tasks via [[in-context-learning]] with no gradient updates at all. This suggested that pre-training, at sufficient scale, encodes enough task knowledge to enable zero- and few-shot performance.
 
-## Contradictions / Tensions Across Papers
+### Historical Context
 
-**From Bommasani et al. (2021):**
-- **Full fine-tuning is not necessary:** Bommasani et al. demonstrate that lightweight adaptation methods updating ~1000× fewer parameters (adapters, prefix tuning, prompt tuning, LoRA) can achieve performance comparable to full fine-tuning, especially as model size increases. The BERT paper presents full fine-tuning as *the* adaptation approach; the FMs paper shows this is just one end of a broad spectrum.
-- **Adaptation scope is broader than task specialization:** BERT's fine-tuning paradigm addresses only task specialization. Bommasani et al. define adaptation to also include temporal adaptation (world knowledge updates), domain adaptation, privacy constraints (machine unlearning), and bias correction — none of which are addressed by BERT's fine-tuning framework.
-- **In-context learning bypasses fine-tuning entirely:** For sufficiently large models, [[in-context-learning]] achieves useful task performance with zero labeled examples and no gradient updates. This was not demonstrated in BERT-scale models but emerges in GPT-3 (175B), suggesting the fine-tuning paradigm may be unnecessary beyond a certain scale threshold.
+The foundation model era began around 2018 when BERT demonstrated that a single pre-trained model (rather than task-specific architectures) could achieve SOTA across many benchmarks. Bommasani et al. (2022) describe this as a sociological inflection point: after BERT, self-supervised pre-training + fine-tuning became the substrate of NLP rather than a subfield.
 
-See [[adaptation]] for a full taxonomy of adaptation methods.
+### Parameter-Efficient Fine-tuning (PEFT)
 
-**From Ouyang et al. (2022) — RLHF as a third paradigm:**  
-[[rlhf]] ([[instructgpt]]) introduces a third form of post-pre-training fine-tuning: optimization against *human preference comparisons* via reinforcement learning, rather than cross-entropy on task-specific labeled data. This is a qualitatively different learning signal — it encodes what humans judge as helpful, honest, and harmless across a broad instruction distribution, not correctness on a specific NLU task. A 1.3B RLHF-tuned model is preferred over 175B GPT-3 in human evaluations, demonstrating that the *nature* of the fine-tuning signal can matter more than model scale.
-
-## Contradictions with "Attention Is All You Need"
-
-The Transformer paper does not use pre-training — it trains from scratch for each task (machine translation, constituency parsing). The pre-train/fine-tune paradigm is absent from that paper and represents a fundamentally different approach to transfer learning introduced and validated by BERT.
+Full fine-tuning updates all model weights. For large models, this becomes expensive. PEFT methods update only a small subset of parameters:
+- **LoRA** (Low-Rank Adaptation): adds low-rank decomposition matrices to key weight matrices
+- **QLoRA**: LoRA with quantized base model weights
+- **Adapters**: small bottleneck modules inserted between layers
+- These enable fine-tuning large models with a fraction of the GPU memory and compute
 
 ## Related Concepts
 
-- [[bert]]
-- [[masked-language-model]]
-- [[next-sentence-prediction]]
-- [[transformer]]
-- [[self-attention]]
-- [[glue]]
-- [[cls-sep-tokens]]
-- [[adaptation]]
-- [[in-context-learning]]
-- [[rlhf]]
-- [[foundation-model]]
+- [[bert]] — Introduced the pre-training/fine-tuning paradigm at scale for NLP
+- [[self-supervised-learning]] — The mechanism used in pre-training
+- [[masked-language-model]] — BERT's pre-training objective
+- [[in-context-learning]] — Alternative to fine-tuning for large models
+- [[foundation-model]] — Pre-training/fine-tuning is what makes foundation models possible
+- [[gpt-3]] — Showed that pre-training alone (without fine-tuning) can work via in-context learning
+- [[rlhf]] — A post-pre-training alignment step that uses further fine-tuning
+
+## Sources
+
+- Devlin et al. — "BERT: Pre-training of Deep Bidirectional Transformers" (2018) — bert-overview.txt
+- Brown et al. — "Language Models are Few-Shot Learners" (2020) — Section 2
+- Bommasani et al. — "On the Opportunities and Risks of Foundation Models" (2022) — Section 1.1
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

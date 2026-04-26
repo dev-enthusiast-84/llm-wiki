@@ -1,45 +1,64 @@
-# GLUE Benchmark
+# GLUE
 
-**Source:** "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" — Devlin et al., 2019  
-**Original paper:** Wang et al., "GLUE: A Multi-Task Benchmark and Analysis Platform for Natural Language Understanding", EMNLP 2018
+The General Language Understanding Evaluation benchmark — a collection of NLP tasks used to measure a model's general language understanding.
 
 ## Summary
 
-GLUE (General Language Understanding Evaluation) is a benchmark of diverse NLU tasks used to evaluate [[bert]] and compare it against prior systems. BERT_LARGE achieved 80.5 on GLUE at publication (2019), a 7.7-point absolute improvement over the prior state of the art. Bommasani et al. (2021) argue that task-specific benchmarks like GLUE are inadequate for evaluating foundation models; scores on GLUE have been far surpassed by subsequent models.
+GLUE (Wang et al., 2018) is a multi-task benchmark comprising 9 diverse NLP tasks (sentiment analysis, textual entailment, coreference resolution, etc.) designed to evaluate a model's general language understanding. BERT achieved state-of-the-art results on all GLUE tasks upon release, demonstrating the power of pre-training + fine-tuning as a paradigm. SuperGLUE, a harder follow-up benchmark, was released after human performance was exceeded on GLUE.
 
 ## Explanation
 
-**Tasks included:**
+### Composition
 
-| Task   | Type                        | Training size | BERT_LARGE |
-|--------|----------------------------|---------------|-----------|
-| MNLI   | Entailment (3-class)        | 392k          | 86.7/85.9 |
-| QQP    | Paraphrase detection        | 363k          | 72.1      |
-| QNLI   | Question NLI                | 108k          | 92.7      |
-| SST-2  | Sentiment (binary)          | 67k           | 94.9      |
-| CoLA   | Linguistic acceptability    | 8.5k          | 60.5      |
-| STS-B  | Semantic similarity         | 5.7k          | 86.5      |
-| MRPC   | Paraphrase (news)           | 3.5k          | 89.3      |
-| RTE    | Entailment (binary)         | 2.5k          | 70.1      |
-| WNLI   | Winograd NLI                | 634           | excluded* |
+| Task | Type | Description |
+|------|------|-------------|
+| CoLA | Acceptability | Is the sentence grammatically acceptable? |
+| SST-2 | Sentiment | Is movie review positive or negative? |
+| MRPC | Paraphrase | Are two sentences paraphrases? |
+| STS-B | Similarity | Rate semantic similarity of two sentences (1–5) |
+| QQP | Paraphrase | Are two Quora questions equivalent? |
+| MNLI | Entailment | Does premise entail/contradict/neutralize hypothesis? |
+| QNLI | Entailment | Does sentence contain the answer to the question? |
+| RTE | Entailment | 2-class textual entailment |
+| WNLI | Coreference | Winograd schema coreference challenge |
 
-*WNLI is excluded due to known dataset construction issues where every submitted system performs below the majority-class baseline.
+A single aggregate GLUE score is computed as the average across tasks.
 
-**Fine-tuning setup for GLUE:**  
-- Batch size: 32
-- Fine-tune for 3 epochs
-- Learning rate selected from {5e-5, 4e-5, 3e-5, 2e-5} on dev set
-- For BERT_LARGE on small datasets: multiple random restarts, select best dev model
+### BERT on GLUE
 
-**Key finding (as of 2019):**  
-BERT_LARGE outperforms OpenAI GPT (72.8) by 7.7 points despite near-identical architecture — the difference is bidirectionality ([[masked-language-model]]) and [[next-sentence-prediction]] pre-training. Both scores have since been surpassed by many models.
+BERT's GLUE performance (Wang et al., 2018; Devlin et al., 2018):
+- BERT-Large achieved 80.5 GLUE score, outperforming prior SOTA (OpenAI GPT) by 7 points
+- BERT achieved human-level performance on most individual tasks
+- Fine-tuning required only a classification head on the [CLS] token — no task-specific architecture
 
-**Benchmark adequacy:**  
-Bommasani et al. (2021) argue GLUE is insufficient for evaluating foundation models: it tests only in-distribution task performance, cannot capture emergent capabilities, and does not measure robustness, fairness, or efficiency. Meta-benchmarks (BIG-Bench, FLEX) and intrinsic evaluation are proposed as more suitable frameworks.
+This validated the pre-training/fine-tuning paradigm as a general approach to NLP.
+
+### SuperGLUE and Beyond
+
+After BERT exceeded human performance on most GLUE tasks, SuperGLUE (Wang et al., 2019) was released with harder tasks including:
+- Multi-sentence reasoning
+- Coreference resolution
+- Question answering with evidence selection
+
+Benchmark leaderboards have continued to saturate as models grow, leading to more dynamic evaluation frameworks.
+
+### Data Contamination Risk
+
+Because GLUE is publicly available and widely cited, its examples appear throughout the internet. Large models trained on web-scraped data (GPT-3, foundation models) may have GLUE examples in their training data, making GLUE scores difficult to interpret as clean generalization measures (see [[data-contamination]]).
 
 ## Related Concepts
 
-- [[bert]]
-- [[pre-training-fine-tuning]]
-- [[masked-language-model]]
-- [[next-sentence-prediction]]
+- [[bert]] — BERT achieved state-of-the-art on all 9 GLUE tasks
+- [[pre-training-fine-tuning]] — GLUE benchmarks the fine-tuning stage of the paradigm
+- [[cls-sep-tokens]] — BERT uses the [CLS] token representation for GLUE classification tasks
+- [[data-contamination]] — GLUE examples may appear in large model training data
+- [[foundation-model]] — Foundation models are often evaluated on GLUE/SuperGLUE
+
+## Sources
+
+- Devlin et al. — "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" (2018) — via bert-overview.txt
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

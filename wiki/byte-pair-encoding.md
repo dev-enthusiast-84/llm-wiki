@@ -1,34 +1,58 @@
-# Byte-Pair Encoding (BPE)
+# Byte-Pair Encoding
 
-**Source:** "Attention Is All You Need" — Vaswani et al., 2017 (NIPS)  
-**Original paper:** Sennrich et al., "Neural Machine Translation of Rare Words with Subword Units", arXiv:1508.07909, 2015
+A subword tokenization algorithm that iteratively merges the most frequent adjacent character pairs to build a vocabulary.
 
 ## Summary
 
-Byte-Pair Encoding (BPE) is a subword tokenization algorithm used in the [[transformer]] to handle rare and out-of-vocabulary words by representing text as sequences of variable-length subword units.
+Byte-Pair Encoding (BPE), originally a data compression algorithm adapted for NLP by Sennrich et al. (2016), builds a subword vocabulary by starting with individual characters and repeatedly merging the most frequently co-occurring adjacent pair. The resulting vocabulary balances coverage of common words (represented as single tokens) with the ability to decompose rare words into known subword pieces. BPE is used in GPT-3 and the original Transformer, while BERT uses the related [[wordpiece]] algorithm.
 
 ## Explanation
 
-BPE starts from a character vocabulary and iteratively merges the most frequent adjacent symbol pairs until reaching a target vocabulary size. This balances vocabulary coverage with sequence length:
-- Common words become single tokens
-- Rare words are split into known subword pieces
-- No true OOV problem (worst case: character-level fallback)
+### Algorithm
 
-**Usage in the Transformer paper:**
+1. Initialize vocabulary with all individual characters (and a special end-of-word symbol)
+2. Count all adjacent symbol pairs in the training corpus
+3. Merge the most frequent pair into a single new symbol
+4. Repeat until the desired vocabulary size is reached
 
-| Task  | Dataset       | Vocab size | Shared vocab? |
-|-------|--------------|------------|---------------|
-| EN→DE | WMT 2014     | ~37,000    | Yes (source+target) |
-| EN→FR | WMT 2014     | 32,000 (word-piece) | Yes |
+Example merges on "low", "lower", "newest", "widest":
+```
+Initial: l o w</w>, l o w e r</w>, n e w e s t</w>, w i d e s t</w>
+Merge (e, s): l o w</w>, l o w e r</w>, n e w es t</w>, w i d es t</w>
+Merge (es, t): l o w</w>, l o w e r</w>, n e w est</w>, w i d est</w>
+...
+```
 
-The EN→DE task uses BPE with a shared source-target vocabulary. The EN→FR task uses a similar approach called word-piece encoding (Wu et al., 2016) which optimizes the language model likelihood of the training data rather than merge frequency.
+### Differences from WordPiece
 
-**Why shared vocabulary?** Sharing embeddings across source, target, and the pre-softmax projection matrix (as done in the Transformer) is possible only when source and target use the same vocabulary. The paper multiplies embedding weights by √d_model for stability.
+| Property | BPE | WordPiece |
+|----------|-----|-----------|
+| Merge criterion | Frequency | Likelihood improvement |
+| Used in | GPT-3, original Transformer | BERT |
+| End-of-word marker | `</w>` suffix | `##` prefix for continuations |
+
+Both achieve similar goals; practical performance is similar.
+
+### GPT-3's BPE
+
+GPT-3 uses a byte-level BPE with a 50,257-token vocabulary (50,000 merges + 256 byte tokens + 1 special token). Operating at the byte level (rather than character level) guarantees that no sequence is out-of-vocabulary — any string of bytes can be tokenized.
+
+### Role in the Transformer (2017)
+
+The original Transformer trained on WMT English-German used BPE with ~37,000 tokens (shared source-target vocabulary), and English-French used a 32,000 word-piece vocabulary. Shared vocabularies allow the model to directly compare source and target subwords, which helps for closely related languages.
 
 ## Related Concepts
 
-- [[transformer]]
-- [[bleu]]
-- [[encoder-decoder]]
-- [[gpt-3]]
-- [[wordpiece]]
+- [[wordpiece]] — Similar subword algorithm used in BERT; merges by likelihood instead of frequency
+- [[transformer]] — Used BPE for its machine translation experiments
+- [[gpt-3]] — Uses byte-level BPE with 50K vocabulary
+
+## Sources
+
+- Vaswani et al. — "Attention Is All You Need" (2017) — Section 5.1
+- Brown et al. — "Language Models are Few-Shot Learners" (2020) — Section 2.1
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

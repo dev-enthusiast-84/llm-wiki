@@ -1,54 +1,63 @@
-# Self-Supervised Learning (SSL)
+# Self-Supervised Learning
 
-**Source:** "On the Opportunities and Risks of Foundation Models" — Bommasani et al., Stanford CRFM, 2021
+A learning paradigm where training labels are automatically derived from the input data itself, requiring no human annotation.
 
 ## Summary
 
-Self-supervised learning (SSL) is a family of training methods in which supervision signals are derived automatically from unlabeled data — no human annotation required. SSL is the dominant pre-training paradigm for [[foundation-model]]s. The [[masked-language-model]] objective used by [[bert]] and the autoregressive language modeling objective used by GPT are both instances of SSL.
+Self-supervised learning (SSL) generates supervision signals from the structure of the data — for example, by masking part of the input and predicting the missing part, or by predicting the next token given previous tokens. This enables training on virtually unlimited amounts of unlabeled data (web text, books, code), which is the key ingredient that makes large language models possible. It contrasts with supervised learning (human-labeled data) and is distinct from unsupervised learning (typically clustering or density estimation with no prediction task).
 
 ## Explanation
 
-**Core idea:**  
-The pre-training task is constructed by withholding or corrupting part of the input and training the model to predict or reconstruct it. The structure of the data itself provides the supervision signal.
+### Core Idea
 
-**Key SSL objectives:**
+Rather than requiring expensive human annotations, self-supervised learning defines pretext tasks where labels can be automatically extracted:
 
-| Objective                   | Method                  | Examples               |
-|-----------------------------|-------------------------|------------------------|
-| Masked prediction           | Mask tokens/patches, predict them | [[masked-language-model]] (BERT), MAE (images) |
-| Autoregressive generation   | Predict next token      | GPT, GPT-2, GPT-3     |
-| Span corruption/denoising   | Corrupt spans, reconstruct full sequence | T5 (span corruption), BART |
-| Contrastive learning        | Pull similar examples together, push dissimilar apart | CLIP (text-image), SimCLR (vision) |
-| Discriminative (replaced token) | Distinguish real from corrupted tokens | ELECTRA                |
+| Task | Input | Label |
+|------|-------|-------|
+| Masked Language Model | "The [MASK] sat on the mat" | "cat" |
+| Next-token prediction | "The cat sat on the" | "mat" |
+| Next sentence prediction | Sentence A, Sentence B | IsNext / NotNext |
 
-**Efficiency comparison (from Bommasani et al.):**
-- ELECTRA vs BERT: 4× more efficient (discriminative vs generative SSL on same data)
-- Contrastive vs generative for CLIP: 12× more efficient
+These tasks force the model to learn deep representations of language structure and semantics as a byproduct of solving the prediction problem.
 
-**Why SSL is central to foundation models:**  
-SSL enables pre-training on essentially unlimited unlabeled data (the web, books, images, etc.), bypassing the bottleneck of human annotation. It forces the model to acquire broadly useful representations in order to solve the prediction task.
+### Why SSL Enables Scale
 
-**Domain-general SSL (an open goal):**  
-Current SSL objectives tend to be modality-specific (MLM for text, SimCLR for images). Bommasani et al. argue that a domain-general SSL objective applicable to any data type without modification is an important open research direction.
+The practical consequence of self-supervision is that training data is effectively unlimited:
+- Wikipedia, Common Crawl, Books, GitHub — all usable without any labeling effort
+- GPT-3 trained on ~300B tokens (Common Crawl, WebText2, Books, Wikipedia)
+- This is orders of magnitude more than any labeled NLP dataset
 
-**Design trade-offs:**
-- *Generative vs discriminative:* Autoregressive models (generative) enable prefix-based conditioning; masked/denoising models (discriminative in spirit) enable bidirectional context
-- *Abstraction level:* Raw-byte modeling is intractable due to sequence length; tokenization (BPE, WordPiece, patch embeddings) provides efficiency but may lose information
-- *Multimodal alignment:* Late-fusion (separate encoders, aligned via contrastive loss, e.g. CLIP) vs early-fusion (joint encoder, e.g. ViLBERT)
+Bommasani et al. (2022) note that self-supervised learning is one of two key enablers of foundation models (the other being scale); it shifts the source of supervision from human labels to data structure itself.
 
-## Contradictions with Prior Papers
+### Relationship to Unsupervised Learning
 
-- **vs. Devlin et al. (2019):** BERT presents MLM as its central innovation, but Bommasani et al. contextualize it as one instance of a broader SSL family. They note ELECTRA (Clark et al., ICLR 2020 — a 2020 follow-up to BERT) achieves 4× the efficiency of BERT on the same pre-training data — implying that BERT's specific MLM objective is not optimal, just historically first.
-- **vs. Vaswani et al. (2017):** The Transformer paper uses fully supervised training (labeled parallel corpora for translation). SSL as the dominant paradigm for pre-training Transformers is entirely absent from the paper, representing a fundamental shift in how the architecture is actually used in practice.
-- **vs. Ouyang et al. (2022) — RLHF is not SSL:** [[rlhf]] introduces a *human-supervised* fine-tuning stage (human preference comparisons → [[reward-model]] → PPO). This is explicitly not self-supervised: it requires human annotation. RLHF is a post-pre-training alignment technique, applied on top of an SSL-pretrained model. The SSL framework (unsupervised pre-training on unlabeled data) describes pre-training only; RLHF demonstrates that the most impactful improvements to deployed model behavior require human feedback — something SSL alone cannot provide.
+SSL is sometimes called "unsupervised" in older literature (e.g., BERT is described as "unsupervised pre-training"), but the term is technically imprecise:
+- SSL **does** have a prediction target — it's just automatically constructed
+- Unsupervised learning (clustering, PCA) has no prediction target
+- "Self-supervised" is now the preferred precise term
+
+### Vision and Other Modalities
+
+SSL extends beyond NLP:
+- **Images**: predict masked image patches (MAE, BEiT), contrastive self-prediction (DINO, SimCLR)
+- **Audio**: predict masked spectrogram patches (wav2vec)
+- Foundation models are increasingly multimodal, using SSL objectives across modalities simultaneously
 
 ## Related Concepts
 
-- [[masked-language-model]]
-- [[autoregressive-language-model]]
-- [[foundation-model]]
-- [[pre-training-fine-tuning]]
-- [[bert]]
-- [[scaling-laws]]
-- [[in-context-learning]]
-- [[rlhf]]
+- [[masked-language-model]] — A self-supervised objective used to pre-train BERT
+- [[autoregressive-language-model]] — Another self-supervised objective (predict next token)
+- [[pre-training-fine-tuning]] — SSL is used in the pre-training stage
+- [[foundation-model]] — Built on self-supervised pre-training at scale
+- [[bert]] — Pre-trained using MLM and NSP (both self-supervised)
+- [[gpt-3]] — Pre-trained using autoregressive next-token prediction (self-supervised)
+
+## Sources
+
+- Bommasani et al. — "On the Opportunities and Risks of Foundation Models" (2022) — Section 1.1
+- Devlin et al. — "BERT: Pre-training of Deep Bidirectional Transformers" (2018) — bert-overview.txt
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

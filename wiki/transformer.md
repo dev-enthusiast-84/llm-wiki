@@ -1,63 +1,66 @@
 # Transformer
 
-**Source:** "Attention Is All You Need" — Vaswani et al., 2017 (NIPS)
+A neural network architecture based entirely on attention mechanisms, dispensing with recurrence and convolutions.
 
 ## Summary
 
-The Transformer is a sequence transduction model that replaces recurrent and convolutional layers entirely with [[self-attention]] mechanisms. It was the first model to achieve state-of-the-art translation quality using only attention (at publication, 2017), enabling far greater parallelization than RNN-based approaches.
+The Transformer, introduced by Vaswani et al. (2017), replaced recurrent and convolutional architectures for sequence transduction with a design built purely on self-attention and feed-forward layers. It enables massive parallelization during training and achieves state-of-the-art results on machine translation, while generalizing to a wide range of NLP tasks. Its architecture became the foundation for virtually all modern large language models.
 
 ## Explanation
 
-The Transformer follows an [[encoder-decoder]] structure. Both the encoder and decoder are stacks of N=6 identical layers. Each encoder layer has two sub-layers: a [[multi-head-attention]] mechanism and a [[feed-forward-network]]. Each decoder layer has three sub-layers: masked [[multi-head-attention]], encoder-decoder [[multi-head-attention]], and a [[feed-forward-network]].
+### Architecture Overview
 
-Every sub-layer is wrapped with a [[residual-connection]] followed by [[layer-normalization]]:
+The Transformer follows an encoder-decoder structure. Both the encoder and decoder are composed of stacked identical layers (N=6 in the original paper):
 
-```
-output = LayerNorm(x + Sublayer(x))
-```
+- **Encoder**: Each layer has two sub-layers — a multi-head self-attention mechanism and a position-wise feed-forward network.
+- **Decoder**: Each layer adds a third sub-layer — multi-head attention over the encoder output (cross-attention).
 
-All sub-layers and embeddings produce outputs of dimension d_model = 512.
+Residual connections and layer normalization are applied around each sub-layer:
+$$\text{Output} = \text{LayerNorm}(x + \text{Sublayer}(x))$$
 
-**Key design choices:**
-- No recurrence → O(1) sequential operations (vs O(n) for RNNs)
-- [[positional-encoding]] injects sequence order information
-- [[scaled-dot-product-attention]] with scaling by 1/√d_k prevents vanishing gradients in softmax
+All sub-layers and embedding layers produce outputs of dimension $d_{\text{model}} = 512$.
 
-**Results (WMT 2014):**
-- EN→DE: 28.4 BLEU (SOTA at time of publication, 2017; +2 over previous best ensemble)
-- EN→FR: 41.8 BLEU (SOTA at time of publication, 2017; at 1/4 the training cost of prior best)
-- Trained on 8 P100 GPUs in 3.5 days (big model)
+### Key Hyperparameters (Base Model)
 
-## Contradictions / Tensions Across Papers
+| Parameter | Value |
+|-----------|-------|
+| Layers (N) | 6 |
+| Model dim ($d_{\text{model}}$) | 512 |
+| Feed-forward dim ($d_{ff}$) | 2048 |
+| Attention heads (h) | 8 |
+| Key/value dim ($d_k = d_v$) | 64 |
 
-See [[bert]] for BERT-specific architectural divergences. Additional tensions from Bommasani et al. (2021):
+### Why Attention Over Recurrence?
 
-- **Quadratic complexity:** The paper treats self-attention's O(n²) cost per layer as an acceptable trade-off for O(1) path length. Bommasani et al. identify this as a fundamental bottleneck for long-sequence modeling, motivating linear-complexity alternatives: Longformer, BigBird, Sparse Transformer (exploit attention sparsity), Perceiver and GANformer (bipartite/bottleneck attention achieving linear complexity). None of these were anticipated by the original paper.
-- **Scale:** The Transformer paper's largest model is ~213M parameters (encoder + decoder). [[gpt-3]], built on the same architecture, has 175B parameters — nearly 1000× larger — and exhibits [[emergence|emergent]] capabilities not present at the scale the paper studied.
-- **Layer normalization placement:** The original Transformer applies LayerNorm *after* the residual addition: `LayerNorm(x + Sublayer(x))` (post-normalization). GPT-3 applies LayerNorm *before* the sublayer: `x + Sublayer(LayerNorm(x))` (pre-normalization). Pre-normalization improves training stability at very large scale and has become standard in subsequent models.
-- **Attention pattern:** GPT-3 uses *alternating dense and locally-banded sparse* attention layers (Sparse Transformer style), not full self-attention over all positions. This reduces cost for long sequences while preserving expressive capacity.
-- **Task generality:** The paper evaluates on translation and constituency parsing. Bommasani et al. confirm the Transformer architecture underlies virtually all state-of-the-art foundation models across text, images, speech, proteins, and reinforcement learning — a generality far beyond what the original paper envisioned.
-- **Training paradigm:** The Transformer paper trains models from scratch for each task. The foundation model paradigm (Bommasani et al.) inverts this: train once at massive scale on unlabeled data using [[self-supervised-learning]], then [[adaptation|adapt]] cheaply.
+Self-attention connects all positions with a constant number of sequential operations (O(1)), versus O(n) for recurrent layers. This allows learning long-range dependencies more easily and enables full parallelization over sequence positions.
 
-BERT-specific contradictions:
-- [[bert]] uses the Transformer **encoder only** (no decoder).
-- [[bert]] replaces ReLU with GELU in the [[feed-forward-network]].
-- [[bert]] uses learned [[positional-encoding]] instead of sinusoidal.
-- At scale, BERT_LARGE (340M params, encoder only) is larger than the Transformer's biggest model (213M params, encoder + decoder combined).
+### Training
+
+Trained on WMT 2014 English-German (~4.5M sentence pairs, byte-pair encoding, 37K tokens) and English-French (36M sentences, 32K word-piece vocabulary). Achieved 28.4 BLEU on EN-DE and 41.8 on EN-FR, outperforming all prior models at a fraction of the training cost.
 
 ## Related Concepts
 
-- [[self-attention]]
-- [[multi-head-attention]]
-- [[scaled-dot-product-attention]]
-- [[positional-encoding]]
-- [[encoder-decoder]]
-- [[layer-normalization]]
-- [[feed-forward-network]]
-- [[residual-connection]]
-- [[bleu]]
-- [[byte-pair-encoding]]
-- [[bert]]
-- [[foundation-model]]
-- [[self-supervised-learning]]
-- [[scaling-laws]]
+- [[self-attention]] — Core mechanism; each sub-layer in the encoder uses self-attention
+- [[multi-head-attention]] — Extension that runs multiple attention operations in parallel
+- [[scaled-dot-product-attention]] — The specific attention function used
+- [[positional-encoding]] — Required because attention is position-agnostic
+- [[encoder-decoder]] — The overall architectural pattern the Transformer follows
+- [[feed-forward-network]] — The second sub-layer in each Transformer block
+- [[residual-connection]] — Used around each sub-layer to ease gradient flow; also addresses vanishing gradients
+- [[layer-normalization]] — Applied after each residual addition
+- [[bert]] — Encoder-only Transformer pre-trained with MLM
+- [[gpt-3]] — Decoder-only Transformer scaled to 175B parameters
+- [[byte-pair-encoding]] — Tokenization scheme used in Transformer training
+- [[bleu]] — Evaluation metric used to benchmark the Transformer on WMT 2014 translation tasks
+- [[recurrent-neural-network]] — Predecessor architecture replaced by the Transformer; suffers from sequential bottleneck
+- [[vanishing-gradient]] — Key weakness of RNNs that the Transformer avoids via direct attention connections
+
+## Sources
+
+- Vaswani et al. — "Attention Is All You Need" (2017) — Sections 3, 5, 6
+- Wikipedia — "Transformer (deep learning)" — History and architecture overview
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

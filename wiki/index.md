@@ -1,69 +1,89 @@
-# Wiki Index
+# LLM Wiki Index
 
-Total source pages compiled: **370** (Attention.pdf: 15pp · BERT.pdf: 16pp · FMs.pdf: 214pp · GPT-3.pdf: 75pp · RHLF.pdf: ~50pp)
+A structured knowledge base of concepts in large language models, agentic AI, and related systems.
 
 ---
 
-## Foundation Model Paradigm
+## Core Architecture
 
-- [foundation-model](foundation-model.md) — Any model trained on broad data via self-supervision that can be adapted to diverse downstream tasks (Bommasani et al., 2021)
-- [emergence](emergence.md) — Capabilities implicitly induced by scale, not explicitly designed; source of both excitement and safety risk
-- [homogenization](homogenization.md) — Consolidation of AI methodologies and models; strong leverage but single point of failure
-- [scaling-laws](scaling-laws.md) — Power-law relationships between model/data/compute and capability; quantitative but doesn't capture emergent phase transitions
-- [self-supervised-learning](self-supervised-learning.md) — Training from unlabeled data by predicting withheld or corrupted parts of the input; umbrella for MLM, autoregressive LM, contrastive learning
+- [[transformer]] — Full encoder-decoder architecture from Vaswani et al. (2017)
+- [[self-attention]] — Q/K/V mechanism; relates all token positions in O(n²·d)
+- [[scaled-dot-product-attention]] — Attention(Q,K,V) = softmax(QK^T/√d_k)V
+- [[multi-head-attention]] — h parallel attention heads concatenated and projected
+- [[positional-encoding]] — Sinusoidal or learned position signals injected into embeddings
+- [[encoder-decoder]] — Encoder-only, decoder-only, and full encoder-decoder architectures
+- [[feed-forward-network]] — Position-wise FFN with 4× hidden expansion in each Transformer block
+- [[residual-connection]] — Skip connections with layer normalization: LayerNorm(x + Sublayer(x))
+- [[layer-normalization]] — Per-example feature normalization with learned scale and shift
 
-## Adaptation
+---
 
-- [adaptation](adaptation.md) — Broad spectrum from full fine-tuning to gradient-free prompting; lightweight methods can match full fine-tuning with 1000× fewer parameters
-- [rlhf](rlhf.md) — Three-step alignment fine-tuning (SFT → reward model → PPO); aligns LMs to human preferences; 1.3B InstructGPT beats 175B GPT-3
-- [pre-training-fine-tuning](pre-training-fine-tuning.md) — Two-stage paradigm: pre-train on unlabeled text, fine-tune all weights on downstream tasks (BERT-era canonical approach)
-- [in-context-learning](in-context-learning.md) — Adapting a model via natural language prompt with no parameter updates; emergent capability in GPT-3
-- [reward-model](reward-model.md) — Neural network predicting human preference from comparison rankings; scalar output used as RL reward in RLHF pipeline
+## BERT and Tokenization
 
-## Core Architectures
+- [[bert]] — Bidirectional encoder pre-trained with MLM + NSP; BERT-Base (110M), BERT-Large (340M)
+- [[masked-language-model]] — Predict randomly masked tokens; 80/10/10 masking strategy
+- [[next-sentence-prediction]] — Binary IsNext/NotNext task; shown to be unhelpful by RoBERTa
+- [[cls-sep-tokens]] — [CLS] for classification output; [SEP] as segment boundary marker
+- [[wordpiece]] — Subword tokenization by likelihood-maximizing merges; 30K vocabulary
+- [[byte-pair-encoding]] — Subword tokenization by frequency-maximizing merges; used in GPT-3
 
-- [transformer](transformer.md) — Sequence transduction model using only self-attention; eliminates recurrence; foundation of virtually all modern foundation models
-- [bert](bert.md) — Bidirectional Transformer encoder pre-trained with MLM+NSP; beginning of the foundation model era (Devlin et al., 2019)
-- [gpt-3](gpt-3.md) — 175B autoregressive Transformer LM; first robust demonstration of zero/one/few-shot in-context learning (Brown et al., 2020)
-- [instructgpt](instructgpt.md) — RLHF fine-tuned GPT-3; 1.3B version preferred over 175B GPT-3 in human eval; reduces hallucination 41% → 21% (Ouyang et al., 2022)
-- [encoder-decoder](encoder-decoder.md) — Stacked encoder/decoder with cross-attention; the Transformer's macro structure for seq2seq tasks
+---
 
-## Attention Mechanisms
+## Learning Paradigms
 
-- [self-attention](self-attention.md) — Attention over all positions within a single sequence; O(n²) complexity; O(1) sequential ops vs O(n) for RNNs
-- [scaled-dot-product-attention](scaled-dot-product-attention.md) — Core attention function: softmax(QKᵀ/√d_k)·V with scaling to prevent vanishing gradients
-- [multi-head-attention](multi-head-attention.md) — Parallel attention over h learned projections, enabling joint attention to multiple representational subspaces
+- [[pre-training-fine-tuning]] — Two-stage transfer learning: broad pre-training, then task-specific fine-tuning
+- [[self-supervised-learning]] — Labels derived from data structure; enables training on unlabeled corpora
+- [[autoregressive-language-model]] — p(x) = ∏ p(x_t | x_{<t}); causal masking; 100% training signal
+- [[in-context-learning]] — Zero/one/few-shot task adaptation via prompting, no gradient updates
 
-## Pre-training Objectives
+---
 
-- [masked-language-model](masked-language-model.md) — MLM: predict randomly masked tokens from bidirectional context; enables deep bidirectionality; ELECTRA is 4× more efficient
-- [autoregressive-language-model](autoregressive-language-model.md) — Left-to-right next-token prediction; every token supervised per pass; GPT lineage; enables few-shot in-context learning at scale
-- [next-sentence-prediction](next-sentence-prediction.md) — NSP: binary task predicting whether sentence B follows A; later questioned by RoBERTa
+## GPT-3 and Scaling
 
-## Building Blocks
+- [[gpt-3]] — 175B parameter decoder-only Transformer; 300B training tokens; 8 model sizes
+- [[scaling-laws]] — L ≈ L₀ · C^(−0.048); power-law relationship with compute, parameters, data
 
-- [feed-forward-network](feed-forward-network.md) — Position-wise FFN with two linear layers; ReLU in Transformer, GELU in BERT
-- [residual-connection](residual-connection.md) — Skip connections wrapping every sub-layer; prerequisite for training deep stacks
-- [layer-normalization](layer-normalization.md) — Applied after every sub-layer with residual; stabilizes deep network training
-- [positional-encoding](positional-encoding.md) — Sinusoidal in Transformer (recommended), learned in BERT (fixed 512-token cap)
+---
 
-## Tokenization
+## Foundation Models
 
-- [byte-pair-encoding](byte-pair-encoding.md) — Subword tokenization via frequency-based pair merges; used in the Transformer (Sennrich et al.)
-- [wordpiece](wordpiece.md) — Subword tokenization via likelihood-based merges; used in BERT (Wu et al.); similar purpose, different criterion
+- [[foundation-model]] — Trained on broad data at scale via SSL; adapted to many downstream tasks
+- [[emergence]] — Capabilities implicitly induced by scale, not explicitly programmed
+- [[homogenization]] — Consolidation around few models; leverage with shared failure modes
 
-## BERT-specific Concepts
+---
 
-- [cls-sep-tokens](cls-sep-tokens.md) — [CLS] aggregate representation for classification; [SEP] sentence boundary delimiter
+## Alignment and Safety
 
-## Robustness and Safety
+- [[rlhf]] — 3-stage pipeline: SFT → Reward Model → PPO with KL penalty
+- [[reward-model]] — Trained on human preference rankings; outputs scalar quality score
+- [[instructgpt]] — RLHF-trained GPT-3; 1.3B InstructGPT preferred over 175B GPT-3
+- [[ai-safety-alignment]] — Ensuring model behaviors match human values and intentions
+- [[hallucination]] — Fluent but factually incorrect or fabricated model outputs
+- [[distribution-shift]] — Mismatch between training and deployment data distributions
 
-- [distribution-shift](distribution-shift.md) — Train/test mismatch; foundation models improve robustness but don't solve spurious correlations or temporal drift
-- [data-contamination](data-contamination.md) — Benchmark test examples present in web-crawled training data; studied systematically in GPT-3; minimal effect on most benchmarks
-- [hallucination](hallucination.md) — Generating false or unsupported information; 41% rate in GPT-3, 21% in InstructGPT; root cause is next-token prediction objective
-- [ai-safety-alignment](ai-safety-alignment.md) — Value alignment, corrigibility, emergent goal-directed behavior; RLHF as practical alignment technique (HHH framework)
+---
 
-## Evaluation
+## Evaluation and Benchmarks
 
-- [glue](glue.md) — Multi-task NLU benchmark; BERT_LARGE 80.5; deemed inadequate for foundation model evaluation by Bommasani et al.
-- [bleu](bleu.md) — N-gram precision metric for machine translation; Transformer 28.4 EN→DE, 41.8 EN→FR
+- [[glue]] — 9-task NLP benchmark; BERT achieved SOTA on all tasks
+- [[bleu]] — N-gram overlap metric for machine translation; Transformer: 28.4 EN-DE, 41.8 EN-FR
+- [[data-contamination]] — Benchmark test examples appearing in training data, inflating scores
+
+---
+
+## Pre-Transformer Architectures
+
+- [[recurrent-neural-network]] — Sequential network with hidden state; predecessor to the Transformer for NLP
+- [[lstm]] — Gated RNN variant with cell state; solves the vanishing gradient problem
+- [[vanishing-gradient]] — Gradient shrinkage over long sequences; core failure mode of vanilla RNNs
+
+---
+
+## Agentic AI
+
+- [[small-language-model]] — ≤10B parameters; fast inference; suited for agentic pipelines
+
+---
+
+*Last updated: 2026-04-25 — 37 entities across 9 categories*

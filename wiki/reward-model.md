@@ -1,65 +1,64 @@
 # Reward Model
 
-**Source:** "Training language models to follow instructions with human feedback" — Ouyang et al., OpenAI, 2022 (NeurIPS)
+A neural network trained on human preference rankings that outputs a scalar quality score for a given (prompt, response) pair.
 
 ## Summary
 
-A reward model (RM) is a neural network trained to predict which of two model outputs a human labeler would prefer, given a prompt. In the [[rlhf]] pipeline, the RM's scalar output serves as the optimization target for reinforcement learning. The RM operationalizes human preferences as a differentiable reward signal, enabling gradient-based alignment of language models.
+The reward model (RM) is an intermediate model in the RLHF pipeline. It is trained to predict which of two model outputs a human would prefer, then used as a differentiable proxy for human judgment during reinforcement learning. The RM turns expensive human feedback into a dense reward signal the PPO optimizer can use at scale. Because the RM is an imperfect approximation of human preferences, reward hacking — where the LM exploits RM weaknesses — is a central challenge.
 
 ## Explanation
 
-**Architecture:**  
-The RM starts from the SFT model with the final unembedding layer removed. It takes a prompt and a completion as input and outputs a scalar reward score r(x, y). Ouyang et al. use a 6B parameter RM (not 175B) because:
-- 175B RM training was empirically unstable
-- A 6B RM is more suitable as the value function during RL training
-- Saves significant compute
+### Architecture
 
-**Training data:**  
-Labelers are shown K=4–9 model completions for the same prompt and asked to rank them. This produces K-choose-2 pairwise comparisons per prompt. Rather than shuffling all pairs into a dataset (which causes overfitting), all pairs from a single prompt are batched together in a single training step.
+- Initialized from the supervised fine-tuning (SFT) model checkpoint
+- The language model head (vocab projection) is replaced with a linear layer projecting to a scalar
+- Takes the full (prompt + response) as input; outputs a single real number representing quality
 
-**Loss function:**
+### Training Objective
 
-```
-loss(θ) = -1/C(K,2) · E_(x,y_w,y_l)~D [log σ(r_θ(x, y_w) - r_θ(x, y_l))]
-```
-
-where y_w is the preferred completion, y_l is the rejected completion, and σ is the logistic sigmoid. The difference in reward scores represents the log-odds that one response will be preferred over the other.
-
-**Normalization:**  
-Since the RM loss is invariant to reward shifts, the RM is normalized with a bias so that labeler demonstrations achieve a mean score of 0 before RL training.
-
-**Generalization:**  
-5-fold cross-validation across labeler groups shows:
-- RM accuracy on held-out labelers: 69.6 ± 0.9%
-- RM accuracy on training labelers: 72.4 ± 0.4%
-
-The small drop confirms the RM generalizes to preferences of labelers who did not produce training data — a prerequisite for the RLHF pipeline to work beyond just memorizing training labeler preferences.
-
-**Role in the RLHF pipeline:**  
-The RM is used as the reward function in PPO training. Its scalar output is combined with a KL penalty (to prevent the policy from drifting too far from the SFT baseline):
+Given pairs of responses `y_w` (preferred) and `y_l` (rejected) to the same prompt `x`, the RM is trained to maximize:
 
 ```
-reward = r_θ(x, y) - β · log(π_RL(y|x) / π_SFT(y|x))
+log σ(r(x, y_w) − r(x, y_l))
 ```
 
-This prevents the RL policy from producing outputs that receive high RM scores but are incoherent or otherwise degenerate (reward hacking).
+This is the Bradley-Terry pairwise ranking loss: the RM is trained to assign higher scores to preferred responses. The RM does not need absolute ratings — relative preferences are sufficient.
 
-**Limitations:**  
-- The RM encodes the preferences of a specific labeler group (~40 English-speaking contractors), not universal human values
-- RM training instability at 175B scale is an active research challenge
-- The RM may be gamed by the RL policy if the policy finds high-scoring outputs that humans would actually find poor (reward hacking)
-- Inter-annotator agreement is ~73%, meaning the RM must reconcile genuine labeler disagreements by learning the average preference
+### Data Collection
 
-## Contradictions / Tensions Across Papers
+1. Sample a prompt from the dataset
+2. Generate k responses from the SFT model (k typically 4–9 in InstructGPT)
+3. Human labelers rank the k responses
+4. Extract all C(k,2) pairwise comparisons as training signal
 
-- **vs. Bommasani et al. (2021):** Bommasani et al. argue alignment is an open and unsolved challenge. The reward model provides a practical mechanism to encode and optimize toward human preferences — though the authors of the InstructGPT paper explicitly acknowledge this encodes specific group preferences, not a universal notion of alignment.
-- **vs. standard fine-tuning (Devlin et al., 2019):** BERT fine-tuning uses task-specific ground-truth labels. Reward modeling replaces labels with relative human preference comparisons, which are easier to obtain and more naturally capture human judgment on open-ended tasks where there is no single correct answer.
+### Reward Hacking
+
+When the LM is trained against the RM via PPO, it may discover responses that exploit RM weaknesses:
+- Very long responses that pattern-match to "thorough" even if content is poor
+- Flattery or sycophantic language that raters happen to prefer
+- Surface-level coherence masking factual errors
+
+The KL divergence penalty in RLHF (see [[rlhf]]) partially mitigates this by penalizing large deviations from the SFT model.
+
+### RM Limitations
+
+- RM captures labeler preferences, which may not reflect true human values
+- Rater disagreement introduces noise; inter-annotator agreement is typically moderate
+- RM generalizes imperfectly to prompts outside the training distribution
+- Reward overoptimization: as PPO trains longer, LM performance against RM increases but true human preference peaks and then declines
 
 ## Related Concepts
 
-- [[rlhf]]
-- [[instructgpt]]
-- [[ai-safety-alignment]]
-- [[adaptation]]
-- [[gpt-3]]
-- [[hallucination]]
+- [[rlhf]] — The reward model is stage 2 of the 3-stage RLHF pipeline
+- [[instructgpt]] — InstructGPT used an RM trained on GPT-3 outputs ranked by human labelers
+- [[ai-safety-alignment]] — RM imperfections are a key alignment challenge (misspecified objectives)
+- [[hallucination]] — RM may inadvertently reward confident-sounding but false outputs
+
+## Sources
+
+- Ouyang et al. — "Training language models to follow instructions with human feedback" (2022) — via rlhf-overview.docx
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

@@ -1,52 +1,77 @@
 # Scaling Laws
 
-**Source:** "On the Opportunities and Risks of Foundation Models" — Bommasani et al., Stanford CRFM, 2021  
-**Original paper:** Kaplan et al., "Scaling Laws for Neural Language Models", arXiv:2001.08361, 2020
+Empirical relationships describing how language model performance improves as a power law with model size, dataset size, and compute.
 
 ## Summary
 
-Scaling laws describe the empirical observation that [[foundation-model]] capabilities improve predictably and reliably as model size, dataset size, and compute increase — following smooth power-law relationships. This regularity makes training large models strategically predictable, but does not capture [[emergence|emergent]] capabilities that appear discontinuously at scale.
+Scaling laws (Kaplan et al., 2020; Hoffmann et al., 2022) are empirical observations showing that language model validation loss follows smooth, predictable power-law relationships with the number of model parameters (N), amount of training data (D), and total compute (C). These laws allow practitioners to forecast performance of larger models and make principled decisions about how to allocate a compute budget. GPT-3's results confirmed that scaling laws continue for at least two additional orders of magnitude beyond prior work.
 
 ## Explanation
 
-**The core observation (Kaplan et al., 2020):**  
-For language models, test loss scales as a power law with:
-- Model size (number of parameters)
-- Dataset size (number of tokens)
-- Compute budget (FLOPs)
+### The Basic Power Law
 
-Each dimension contributes independently, and there is an optimal allocation of compute between model size and data given a fixed budget.
+For a fixed compute budget, loss scales approximately as:
 
-**Implication for research strategy:**  
-The surprisingly smooth regularity predicted by scaling laws means that smaller models, within academic compute budgets, can be used to predict the behavior of larger models — at least for quantitative improvements (e.g., accuracy on a benchmark). This makes scaling law experiments a practical tool for model selection without training at full scale.
+$$L \approx L_0 \cdot C^{-\alpha}$$
 
-**Limitation — emergent capabilities:**  
-Scaling laws capture *quantitative* improvements (loss goes down, accuracy goes up). They do not capture *qualitative* phase transitions — [[emergence|emergent]] capabilities like [[in-context-learning]] that appear discontinuously only above a threshold model size. For these, small-scale experiments cannot predict when or whether a capability will appear.
+Where $C$ is compute in FLOP/s-days and $\alpha \approx 0.048$ (GPT-3 empirical). Figure 3.1 of the GPT-3 paper shows this relationship holding smoothly across 7 orders of magnitude of compute.
 
-**Hardware-model growth mismatch:**  
-GPU throughput and memory have increased approximately 10× over four years, while model/compute growth has been 10× annually. Foundation model training therefore increasingly exceeds what can fit on a single device, requiring distributed training systems.
+Separately, loss scales with model size and data:
+$$L(N) \propto N^{-\alpha_N}, \quad L(D) \propto D^{-\alpha_D}$$
 
-**GPT-3 as direct application (Brown et al., 2020):**  
-GPT-3 trained 8 model sizes from 125M to 175B parameters, all on 300 billion tokens. The performance curve across these sizes shows roughly smooth power-law improvement on language modeling loss — the Related Work section notes "relatively smooth increases in many (though not all) downstream tasks across 3 orders of magnitude of scaling." Some tasks show discontinuous improvement (see [[emergence]]).
+### Key Implication: How to Allocate Compute
 
-**Compute requirements (as of 2021):**  
-GPT-3 training required several thousand petaFLOP/s-days (vs. tens of petaFLOP/s-days for GPT-2 at 1.5B), far exceeding single-GPU capacity and motivating systems-level co-design (pipeline parallelism, tensor parallelism, data parallelism).
+Given a fixed compute budget $C = 6ND$ (approximate FLOPs for training), there is an optimal balance between N and D:
+- **Kaplan et al. (2020)**: scale N more aggressively than D (led to GPT-3's 175B model trained on 300B tokens)
+- **Hoffmann et al. (Chinchilla, 2022)**: for truly optimal compute-efficiency, scale N and D roughly equally (~20 tokens per parameter)
 
-**Role in the foundation model paradigm:**  
-Scaling laws provide the theoretical justification for investing in ever-larger foundation models: predictable capability gains with scale make the compute investment legible and plannable. They are a core reason why [[homogenization]] around a few large models has occurred — the returns to scale are reliable.
+This revised understanding (Chinchilla scaling laws) suggests GPT-3 is significantly undertrained relative to its parameter count.
 
-## Contradictions with Prior Papers
+### What Scaling Laws Predict vs. Don't
 
-- **vs. Vaswani et al. (2017):** The Transformer paper explores a specific size range (base: 65M params, big: 213M encoder+decoder) and treats model scaling as a hyperparameter choice rather than a systematic research direction. Kaplan et al.'s scaling laws were published three years later and show that the Transformer paper explored only a small region of a much larger and predictable design space.
-- **vs. Devlin et al. (2019):** BERT reports results for BASE (110M) and LARGE (340M) and notes "larger models lead to strict accuracy improvement" (Table 6). This observation is consistent with scaling laws but anecdotal. The systematic study of scaling relationships and their power-law nature postdates BERT.
-- **vs. Ouyang et al. (2022) — alignment vs. scale:** Scaling laws predict that capability improves with parameter count. Ouyang et al. show that 1.3B [[instructgpt]] is preferred over 175B [[gpt-3]] in human evaluations — RLHF alignment fine-tuning can be more impactful than a 100× parameter increase for user-facing task performance. This is not a refutation of scaling laws (test-set loss still improves with scale) but demonstrates that human preference is not simply a function of scale.
+**Predict well:**
+- Validation cross-entropy loss as a function of N, D, C
+- Downstream task performance on most benchmarks (especially when performance is a smooth function of loss)
+
+**Don't predict well:**
+- [[emergence|Emergent capabilities]]: specific skills that appear discontinuously with scale (arithmetic, chain-of-thought reasoning)
+- Qualitative capability jumps (e.g., in-context learning ability)
+- Out-of-distribution generalization
+
+### Implications for Foundation Models
+
+Scaling laws provide the theoretical justification for investing in very large models:
+- Predictable returns on compute investment
+- Larger models are more sample-efficient (more performance per training token)
+- The scaling curve has not shown signs of flattening within the parameter ranges studied
+
+Bommasani et al. (2022) note that scaling makes foundation models possible: the returns are sufficient to justify the enormous training costs, and the smooth scaling allows planned resource allocation.
 
 ## Related Concepts
 
-- [[foundation-model]]
-- [[emergence]]
-- [[in-context-learning]]
-- [[homogenization]]
-- [[transformer]]
-- [[gpt-3]]
-- [[self-supervised-learning]]
+- [[gpt-3]] — Confirmed scaling laws for 2+ additional orders of magnitude
+- [[foundation-model]] — Scaling laws justify training large foundation models
+- [[emergence]] — Contrasts with scaling laws: some capabilities jump discontinuously
+- [[autoregressive-language-model]] — Loss metrics used to measure scaling laws assume this architecture
+- [[pre-training-fine-tuning]] — Scaling laws primarily describe the pre-training phase
+- [[small-language-model]] — Represents a deliberate departure from scale-maximizing; trades peak capability for deployability
+
+## Contradictions
+
+The two foundational scaling law papers disagree on how to allocate a fixed compute budget:
+
+- **Kaplan et al. (2020)**: scale model size (N) more aggressively than data (D); led to GPT-3's 175B parameters trained on ~300B tokens
+- **Hoffmann et al. / Chinchilla (2022)**: for optimal compute efficiency, scale N and D roughly equally (~20 tokens per parameter); GPT-3 is significantly undertrained relative to its parameter count
+
+Context: both papers agree on the power-law relationship between loss and compute. The disagreement is about the optimal N/D ratio within that budget. The Chinchilla result has largely superseded Kaplan et al.'s recommendation in post-2022 model training practice.
+
+## Sources
+
+- Brown et al. — "Language Models are Few-Shot Learners" (2020) — Sections 1, 3.1
+- Bommasani et al. — "On the Opportunities and Risks of Foundation Models" (2022) — Section 1.3
+- Hoffmann et al. — "Training Compute-Optimal Large Language Models" (Chinchilla, 2022)
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

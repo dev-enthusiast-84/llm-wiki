@@ -1,68 +1,70 @@
 # InstructGPT
 
-**Source:** "Training language models to follow instructions with human feedback" — Ouyang et al., OpenAI, 2022 (NeurIPS)
+A GPT-3 variant fine-tuned with RLHF to follow natural language instructions, preferred by human raters over GPT-3 despite having far fewer parameters.
 
 ## Summary
 
-InstructGPT is a family of language models produced by applying [[rlhf]] fine-tuning to [[gpt-3]]. Despite being up to 100× smaller than GPT-3 in parameter count, human evaluators prefer InstructGPT outputs 85% of the time over GPT-3. It is the direct predecessor to ChatGPT and represents the first large-scale demonstration that behavioral alignment via human feedback is practical, low-cost, and generalizable.
+InstructGPT (Ouyang et al., 2022) demonstrated that applying RLHF to GPT-3 produces models that are substantially more helpful, less harmful, and more honest than the base model — and that a 1.3B InstructGPT model is preferred by human evaluators over a 175B GPT-3 model. This established alignment interventions as complementary to (not in conflict with) scaling: small aligned models can outperform large unaligned ones on user-facing tasks.
 
 ## Explanation
 
-**Architecture:**  
-Identical to [[gpt-3]] — same Transformer architecture, same tokenization, same context window. The only difference is the training procedure. Three sizes were trained: 1.3B, 6B, and 175B parameters.
+### Motivation
 
-**Training procedure:** See [[rlhf]] for full detail. Summary:
-1. **SFT:** Fine-tune GPT-3 on labeler-written demonstrations (~13k prompts)
-2. **RM training:** Train a 6B [[reward-model]] to predict human preferences from ranked comparison data (~33k prompts, K=4–9 responses per prompt)
-3. **PPO-ptx:** Fine-tune the SFT model against the RM using PPO, with a KL penalty to prevent reward hacking, and a pretraining gradient mix to prevent alignment tax
+GPT-3, despite impressive few-shot performance, produces outputs that can be unhelpful, harmful, or misaligned with user intent. It will:
+- Generate harmful content when prompted (jailbreaks)
+- Produce verbose non-answers on ambiguous prompts
+- Follow the surface form of a prompt rather than the user's intent
 
-**Key results:**
+InstructGPT aimed to make models that do what users actually want, not just what the training data distribution dictates.
 
-| Comparison | Result |
-|-----------|--------|
-| 175B InstructGPT vs. 175B GPT-3 | InstructGPT preferred 85 ± 3% of the time |
-| 175B InstructGPT vs. few-shot 175B GPT-3 | InstructGPT preferred 71 ± 4% of the time |
-| **1.3B InstructGPT vs. 175B GPT-3** | **1.3B preferred** (100× fewer params) |
-| TruthfulQA (truthfulness) | InstructGPT ~2× more truthful than GPT-3 |
-| Hallucination rate (closed-domain tasks) | 21% (InstructGPT) vs. 41% (GPT-3) |
-| Toxicity (with respectful prompt) | ~25% fewer toxic outputs than GPT-3 |
-| Bias (Winogender, CrowS-Pairs) | No improvement over GPT-3 |
+### Training Pipeline
 
-**Behaviors improved over GPT-3:**
-- Follows explicit constraints in instructions
-- Attempts the correct instruction more reliably
-- Produces less fabricated information ([[hallucination]]) on closed-domain tasks
-- Responds appropriately in the context of a customer assistant
-- Generalizes to non-English instructions and code Q&A (despite minimal supervised coverage in training)
+InstructGPT applied the full 3-stage RLHF pipeline to GPT-3:
 
-**Remaining limitations:**
-- Assumes false premises in instructions without questioning them
-- Over-hedges on simple factual questions (erring too far toward epistemic humility)
-- Degrades on multi-constraint instructions (e.g. "list 10 1930s French films")
-- When explicitly prompted to be harmful, produces *more* toxic output than GPT-3 (complies with harmful instructions)
-- Bias not reduced (Winogender, CrowS-Pairs show no improvement)
-- Labeler preferences reflect a specific demographic (English-speaking US/SE Asia contractors), not universal human values
+1. **SFT**: Human labelers wrote high-quality responses to ~13K prompts; GPT-3 was fine-tuned on these demonstrations
+2. **RM**: Human labelers ranked 4–9 SFT responses per prompt; a reward model (1.3B params) was trained on ~33K comparison pairs
+3. **PPO**: The SFT model was fine-tuned against the RM using PPO with a KL penalty (β ≈ 0.02)
 
-**Alignment tax:**  
-Before applying PPO-ptx, RLHF fine-tuning caused performance regressions on SQuAD, DROP, HellaSwag, and WMT FR→EN translation. The PPO-ptx variant largely mitigates these regressions by mixing pretraining log-likelihood gradients into the PPO update. See [[rlhf]].
+InstructGPT released three model sizes: 1.3B, 6B, and 175B parameters.
 
-**Cost of alignment:**  
-Training the 175B InstructGPT required 4.9 petaflop/s-days (SFT) + 60 petaflop/s-days (PPO-ptx), compared to 3,640 petaflop/s-days for pre-training GPT-3. Alignment fine-tuning costs <2% of pretraining compute.
+### Key Results
 
-## Contradictions / Tensions Across Papers
+| Comparison | Human Preference |
+|-----------|-----------------|
+| InstructGPT 1.3B vs GPT-3 175B | InstructGPT preferred 85% of the time |
+| InstructGPT 175B vs GPT-3 175B | InstructGPT preferred 85% of the time |
+| InstructGPT 175B vs FLAN/T0 (prompted) | InstructGPT preferred |
 
-- **vs. Brown et al. (2020) — scale:** GPT-3's central thesis is that scale enables few-shot generalization. InstructGPT shows that 1.3B parameters, properly aligned, outperforms 175B parameters for instruction following — suggesting alignment is a more efficient lever than scale for user-facing tasks.
-- **vs. Brown et al. (2020) — fine-tuning risk:** GPT-3 argues fine-tuning risks poor OOD generalization. RLHF fine-tuning on InstructGPT *improves* OOD generalization (non-English languages, code) despite never being explicitly supervised on these domains.
-- **vs. Devlin et al. (2019) — task-specific fine-tuning:** BERT fine-tunes on task-specific labeled data. InstructGPT uses human preference comparisons across a broad instruction distribution — a qualitatively different and more general fine-tuning paradigm.
-- **vs. Bommasani et al. (2021) — alignment timeline:** The FMs paper presents alignment as a major open challenge requiring future research. InstructGPT demonstrates a production-deployed alignment solution within one year of publication, showing the timeline is much shorter than anticipated.
+- InstructGPT produced fewer hallucinations on TruthfulQA
+- Generated far fewer toxic outputs when prompted with harmful instructions
+- "Alignment tax" was minimal: InstructGPT 175B matched or exceeded GPT-3 on most NLP benchmarks
+
+### Design Decisions
+
+- **Prompt distribution**: sampled from real OpenAI API usage, not synthetic benchmarks — this gives a realistic training distribution
+- **Labeler training**: extensive guidelines and training for human labelers to ensure consistent quality judgments
+- **Public SFT data**: ~13K demonstrations with explicit "helpful, harmless, honest" framing
+
+### Limitations and Critiques
+
+- Captures labeler preferences, not universal human values — labeler demographics introduce bias
+- RLHF does not eliminate hallucination, only reduces it
+- Still exhibits sycophancy — agreeing with users even when wrong
+- Alignment may degrade on tasks not well-represented in the RLHF training distribution
 
 ## Related Concepts
 
-- [[rlhf]]
-- [[gpt-3]]
-- [[reward-model]]
-- [[adaptation]]
-- [[hallucination]]
-- [[ai-safety-alignment]]
-- [[in-context-learning]]
-- [[pre-training-fine-tuning]]
+- [[rlhf]] — The training methodology used to create InstructGPT
+- [[reward-model]] — The RM is trained on human preference rankings of InstructGPT outputs
+- [[gpt-3]] — The base model InstructGPT fine-tunes
+- [[hallucination]] — InstructGPT reduces but does not eliminate hallucination
+- [[ai-safety-alignment]] — InstructGPT is the flagship practical demonstration of LLM alignment
+
+## Sources
+
+- Ouyang et al. — "Training language models to follow instructions with human feedback" (2022) — via rlhf-overview.docx
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

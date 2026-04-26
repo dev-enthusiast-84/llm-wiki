@@ -1,78 +1,67 @@
 # BERT
 
-**Source:** "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" — Devlin et al., Google AI Language, 2019 (NAACL)
+Bidirectional Encoder Representations from Transformers — a pre-trained language model using a bidirectional Transformer encoder.
 
 ## Summary
 
-BERT (Bidirectional Encoder Representations from Transformers) is a language representation model that pre-trains a deep bidirectional [[transformer]] encoder on unlabeled text, then fine-tunes the entire model for downstream NLP tasks. At publication (2019), it achieved state-of-the-art results on 11 NLP tasks with minimal task-specific architecture changes; these scores have since been surpassed.
+BERT (Devlin et al., 2018) fundamentally changed NLP by showing that a single deeply bidirectional Transformer encoder, pre-trained on large text corpora using Masked Language Modeling and Next Sentence Prediction, could be fine-tuned with minimal task-specific modifications to achieve state-of-the-art results across a wide range of tasks. Unlike prior unidirectional models (GPT), BERT processes context from both left and right simultaneously at every layer.
 
 ## Explanation
 
-BERT applies the [[pre-training-fine-tuning]] paradigm to NLP at scale. The core insight is that existing pre-training methods (OpenAI GPT, ELMo) are fundamentally limited by **unidirectionality** — each token can only see context to its left (or independently to its left and right). BERT enables truly deep bidirectional representations by using the [[masked-language-model]] objective.
+### Architecture
 
-**Model architecture:**  
-BERT is the encoder half of the [[transformer]] — there is no decoder. It uses bidirectional [[self-attention]] throughout, meaning every token attends to all other tokens in both directions at every layer.
+BERT-Base: 12 layers, 768 hidden dim, 12 attention heads, 110M parameters
+BERT-Large: 24 layers, 1024 hidden dim, 16 attention heads, 340M parameters
 
-| Model       | Layers (L) | Hidden (H) | Heads (A) | Parameters |
-|-------------|-----------|-----------|----------|-----------|
-| BERT_BASE   | 12        | 768       | 12       | 110M      |
-| BERT_LARGE  | 24        | 1024      | 16       | 340M      |
+Uses [[wordpiece]] tokenization with a 30,000-token vocabulary. Special tokens: `[CLS]` at the start of every sequence (used for classification), `[SEP]` between sentence pairs and at the end.
 
-Note: feed-forward inner dimension is always 4×H (3072 for BASE, 4096 for LARGE).
+### Pre-training Tasks
 
-**Input representation:**  
-Every input token's embedding is the sum of three components:
-1. Token embedding (30,000-token [[wordpiece]] vocabulary)
-2. Segment embedding (sentence A vs sentence B)
-3. Position embedding (learned, not sinusoidal)
+**1. Masked Language Model (MLM)**: 15% of tokens are randomly selected. Of those:
+- 80% are replaced with `[MASK]`
+- 10% are replaced with a random token
+- 10% are kept unchanged
 
-Special tokens: [[cls-sep-tokens]]
+The model predicts the original tokens at masked positions. This enables **deeply bidirectional** context — the representation of each token depends on all other tokens, since masking prevents "seeing itself."
 
-**Pre-training objectives:**
-1. [[masked-language-model]] (MLM) — enables bidirectionality
-2. [[next-sentence-prediction]] (NSP) — captures sentence relationships
+**2. Next Sentence Prediction (NSP)**: Given two sentences A and B, predict whether B is the actual next sentence following A (50%) or a random sentence (50%). This was intended to improve understanding of sentence relationships, though later work (RoBERTa) found NSP to be less important than originally thought.
 
-**Pre-training data:** BooksCorpus (800M words) + English Wikipedia (2,500M words). Document-level corpus is critical for learning long contiguous sequences.
+### Fine-tuning
 
-**Pre-training compute:** BERT_BASE: 4 Cloud TPUs × 4 days. BERT_LARGE: 16 Cloud TPUs × 4 days.
+BERT is fine-tuned end-to-end for downstream tasks by adding a simple output layer:
+- **Classification** (e.g., sentiment): use `[CLS]` token representation
+- **Token labeling** (e.g., NER): use per-token representations
+- **Span extraction** (e.g., SQuAD): add start/end position classifiers over tokens
 
-**Results (at publication, 2019; since surpassed):**
-- GLUE: 80.5 (BERT_LARGE), +7.7 points over prior SOTA
-- SQuAD v1.1 Test F1: 93.2
-- SQuAD v2.0 Test F1: 83.1 (+5.1 over prior SOTA)
-- SWAG: 86.3%, outperforming ESIM+ELMo by 27.1%
+Fine-tuning is fast: most results reproducible in 1 hour on a Cloud TPU.
 
-**Fine-tuning:** Inexpensive — all results replicable in ≤1 hour on a single Cloud TPU. Task-specific architecture change is minimal: add a single output layer on top of the [CLS] token (classification tasks) or token representations (token-level tasks).
+### Results
 
-## Contradictions / Tensions with Bommasani et al. (2021)
+At time of publication (2018), set new state-of-the-art on 11 NLP benchmarks:
+- SQuAD v1.1: 93.2% F1 (ensemble)
+- MultiNLI: 86.7%
+- GLUE benchmark: significant improvements across all tasks
 
-- **BERT as "beginning of the era":** Bommasani et al. characterize BERT's introduction as the sociological inflection point marking the beginning of the foundation model era — the first time a single NLP model became a *substrate* for the entire field. This is a stronger claim than the BERT paper makes about itself.
-- **Full fine-tuning challenged:** The BERT paper presents full parameter fine-tuning as the standard and efficient approach. Bommasani et al. demonstrate that lightweight adaptation (adapters, prompt tuning, prefix tuning) can match full fine-tuning performance using 1000× fewer parameters, especially at larger model scales. See [[adaptation]].
-- **Anglocentric bias:** BERT is trained on English Wikipedia + BooksCorpus. Bommasani et al. (citing Zhou et al. 2021) note this produces an Anglocentric bias — BERT-based models perform significantly worse on non-English, low-resource languages and cross-cultural tasks. The BERT paper does not evaluate multilinguality or linguistic diversity.
-- **MLM efficiency:** ELECTRA achieves 4× the training efficiency of BERT's MLM objective on the same data. See [[masked-language-model]].
-- **NSP utility questioned:** Subsequent work (RoBERTa, 2019 — cited in Bommasani et al.) finds that NSP may hurt rather than help downstream performance, suggesting BERT's ablation results showing NSP benefit may be confounded with other training differences (batch size, data).
-- **GLUE inadequacy:** BERT was evaluated primarily on GLUE. Bommasani et al. argue task-specific benchmarks like GLUE are inadequate for characterizing foundation models, which require intrinsic evaluation, meta-benchmarks, and evaluation of emergent capabilities not captured by static benchmark suites.
+### Smaller BERT Models
 
-## Contradictions with "Attention Is All You Need"
-
-- **Activation function:** [[transformer]] paper uses ReLU in [[feed-forward-network]]; BERT uses GELU (Hendrycks & Gimpel, 2016), following OpenAI GPT.
-- **Positional encoding:** [[transformer]] paper recommends sinusoidal encodings and shows learned embeddings are equivalent; BERT uses learned positional embeddings exclusively, training them on sequences ≤512 tokens.
-- **Self-attention directionality:** [[transformer]] decoder uses causal (left-to-right) [[self-attention]]; BERT's ablations show bidirectional attention is strictly superior for understanding tasks, contradicting the implicit assumption that causal attention is sufficient for representation learning.
-- **Model scale:** The "big" [[transformer]] has ~213M params (encoder+decoder). BERT_BASE alone has 110M params (encoder only). BERT_LARGE has 340M — larger than any Transformer variant discussed in Vaswani et al.
+Turc et al. (2020) released 24 compact BERT models (BERT-Tiny through BERT-Base) for resource-constrained environments, best used with knowledge distillation.
 
 ## Related Concepts
 
-- [[masked-language-model]]
-- [[next-sentence-prediction]]
-- [[pre-training-fine-tuning]]
-- [[self-attention]]
-- [[transformer]]
-- [[wordpiece]]
-- [[cls-sep-tokens]]
-- [[glue]]
-- [[feed-forward-network]]
-- [[positional-encoding]]
-- [[foundation-model]]
-- [[adaptation]]
-- [[self-supervised-learning]]
-- [[homogenization]]
+- [[transformer]] — BERT uses a Transformer encoder stack
+- [[masked-language-model]] — Primary pre-training objective
+- [[next-sentence-prediction]] — Secondary pre-training objective
+- [[cls-sep-tokens]] — Special tokens in BERT's input format
+- [[wordpiece]] — Tokenization scheme used
+- [[pre-training-fine-tuning]] — BERT's two-stage training paradigm
+- [[glue]] — Benchmark on which BERT achieved SOTA at release
+
+## Sources
+
+- Devlin et al. — "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" (2018/2019) — bert-overview.txt
+- Turc et al. — "Well-Read Students Learn Better" (2019/2020)
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

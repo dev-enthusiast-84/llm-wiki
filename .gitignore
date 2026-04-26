@@ -1,0 +1,28 @@
+# Environment / secrets — never commit API keys
+.env
+.env.*
+*.env
+
+# Streamlit secrets (may contain API keys)
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# macOS
+.DS_Store
+
+# Build / dist
+*.egg-info/
+dist/
+build/
+
+# Generated video output (large binaries)
+presentation/*.mp4
+presentation/*.aiff
+presentation/*.mp3

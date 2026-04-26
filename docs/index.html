@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Wiki — Turn Research Papers into a Living Knowledge Base</title>
+  <meta name="description" content="LLM Wiki transforms raw research papers into an interconnected, queryable wiki of AI/ML concepts — works in Claude Code CLI or GitHub Copilot Chat, query with any major LLM provider." />
+  <meta property="og:title" content="LLM Wiki" />
+  <meta property="og:description" content="Turn research papers into a living knowledge base. Query with any major LLM provider." />
+  <meta property="og:type" content="website" />
+
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #18181f;
+      --border: rgba(255,255,255,0.07);
+      --text: #e8e8f0;
+      --muted: #7f7f9a;
+      --accent: #7c6af5;
+      --accent2: #a78bfa;
+      --accent3: #38bdf8;
+      --green: #34d399;
+      --glow: rgba(124, 106, 245, 0.3);
+      --radius: 12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 60px;
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: .5rem; font-weight: 700; font-size: 1.1rem; color: var(--text); text-decoration: none; }
+    .nav-logo span { color: var(--accent2); }
+    .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .9rem; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      background: var(--accent); color: #fff; padding: .4rem 1rem;
+      border-radius: 6px; text-decoration: none; font-size: .88rem; font-weight: 600;
+      transition: opacity .2s;
+    }
+    .nav-cta:hover { opacity: .85; }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 6rem 1.5rem 4rem;
+      position: relative; overflow: hidden;
+    }
+
+    /* animated grid background */
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 30%, transparent 100%);
+      pointer-events: none;
+    }
+
+    /* glow blob */
+    .hero::after {
+      content: '';
+      position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
+      width: 700px; height: 400px;
+      background: radial-gradient(ellipse, rgba(124,106,245,.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: rgba(124,106,245,.12); border: 1px solid rgba(124,106,245,.3);
+      color: var(--accent2); border-radius: 999px; padding: .3rem 1rem;
+      font-size: .82rem; font-weight: 600; letter-spacing: .02em;
+      margin-bottom: 1.5rem; position: relative; z-index: 1;
+    }
+    .hero-badge .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 6px var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity: 1; } 50% { opacity: .4; }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      font-weight: 800; line-height: 1.12;
+      letter-spacing: -.03em;
+      position: relative; z-index: 1;
+      margin-bottom: 1rem;
+    }
+    .hero h1 .grad {
+      background: linear-gradient(135deg, var(--accent2) 0%, var(--accent3) 60%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      color: var(--muted); max-width: 580px;
+      position: relative; z-index: 1; margin-bottom: 2.5rem;
+    }
+
+    .hero-actions {
+      display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+      position: relative; z-index: 1; margin-bottom: 3rem;
+    }
+    .btn-primary {
+      background: var(--accent); color: #fff;
+      padding: .75rem 1.8rem; border-radius: 8px;
+      text-decoration: none; font-weight: 700; font-size: .95rem;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 0 24px var(--glow);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 36px var(--glow); }
+    .btn-ghost {
+      background: transparent; color: var(--text);
+      padding: .75rem 1.8rem; border-radius: 8px;
+      text-decoration: none; font-weight: 600; font-size: .95rem;
+      border: 1px solid var(--border);
+      transition: border-color .2s, background .2s;
+    }
+    .btn-ghost:hover { border-color: rgba(255,255,255,.2); background: rgba(255,255,255,.04); }
+
+    /* terminal hero card */
+    .terminal-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); width: 100%; max-width: 680px;
+      overflow: hidden; position: relative; z-index: 1;
+      box-shadow: 0 0 60px rgba(0,0,0,.6);
+    }
+    .terminal-bar {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .75rem 1rem; background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    .dot-red   { width:12px;height:12px;border-radius:50%;background:#ff5f57; }
+    .dot-yellow{ width:12px;height:12px;border-radius:50%;background:#febc2e; }
+    .dot-green { width:12px;height:12px;border-radius:50%;background:#28c840; }
+    .terminal-title { margin-left: auto; margin-right: auto; font-size: .78rem; color: var(--muted); }
+    .terminal-body { padding: 1.2rem 1.5rem; font-family: 'Cascadia Code', 'Fira Code', 'Menlo', monospace; font-size: .82rem; line-height: 1.9; text-align: left; }
+    .t-prompt { color: var(--green); }
+    .t-cmd    { color: var(--text); }
+    .t-comment{ color: var(--muted); }
+    .t-out    { color: var(--accent2); }
+    .t-path   { color: var(--accent3); }
+    .t-cursor { display: inline-block; width: 8px; height: 1em; background: var(--accent2); animation: blink 1s step-end infinite; vertical-align: text-bottom; }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+    /* ── Sections ── */
+    section { padding: 5rem 1.5rem; }
+    .container { max-width: 1080px; margin: 0 auto; }
+    .section-label {
+      font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--accent2); margin-bottom: .75rem;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 800; letter-spacing: -.02em; line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+    .section-sub { color: var(--muted); max-width: 560px; font-size: 1.05rem; }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+    }
+    .stats-inner {
+      max-width: 900px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 2rem; text-align: center;
+    }
+    .stat-val { font-size: 2.2rem; font-weight: 800; color: var(--accent2); letter-spacing: -.03em; }
+    .stat-label { font-size: .82rem; color: var(--muted); margin-top: .2rem; }
+
+    /* ── Features ── */
+    #features { background: var(--surface); }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem; margin-top: 3rem;
+    }
+    .feature-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem;
+      transition: border-color .25s, transform .25s;
+    }
+    .feature-card:hover { border-color: rgba(124,106,245,.35); transform: translateY(-3px); }
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: rgba(124,106,245,.12); border: 1px solid rgba(124,106,245,.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; margin-bottom: 1rem;
+    }
+    .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: .4rem; }
+    .feature-card p { font-size: .88rem; color: var(--muted); line-height: 1.6; }
+
+    /* ── Workflow ── */
+    #how-it-works {}
+    .workflow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0; margin-top: 3.5rem; position: relative;
+    }
+    .workflow::before {
+      content: '';
+      position: absolute; top: 40px; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--accent3), transparent);
+      pointer-events: none;
+    }
+    .workflow-step { padding: 0 1.5rem; text-align: center; position: relative; }
+    .step-num {
+      width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 1.2rem;
+      background: var(--surface); border: 2px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; font-weight: 900;
+      color: var(--accent2); box-shadow: 0 0 20px var(--glow);
+      position: relative; z-index: 1;
+    }
+    .workflow-step h3 { font-size: 1rem; font-weight: 700; margin-bottom: .4rem; }
+    .workflow-step p { font-size: .88rem; color: var(--muted); }
+    .step-cmd {
+      display: inline-block; margin-top: .8rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: .25rem .75rem;
+      font-family: monospace; font-size: .8rem; color: var(--accent3);
+    }
+
+    /* ── Entity example ── */
+    #entity-format { background: var(--surface); }
+    .entity-split {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 3rem; margin-top: 3rem; align-items: start;
+    }
+    @media (max-width: 700px) { .entity-split { grid-template-columns: 1fr; } }
+    .entity-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .entity-card-header {
+      padding: .75rem 1rem; background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      font-size: .78rem; color: var(--muted); font-family: monospace;
+    }
+    .entity-card-body { padding: 1.2rem; font-family: monospace; font-size: .8rem; line-height: 1.9; }
+    .md-h1  { color: var(--accent2); font-weight: 700; }
+    .md-h2  { color: var(--accent3); font-weight: 700; margin-top: .6rem; }
+    .md-link{ color: var(--green); }
+    .md-muted{ color: var(--muted); }
+    .benefit-list { list-style: none; display: flex; flex-direction: column; gap: 1rem; padding-top: .5rem; }
+    .benefit-list li { display: flex; gap: .75rem; align-items: flex-start; font-size: .95rem; }
+    .benefit-list li::before { content: ''; flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.3); display: flex; align-items: center; justify-content: center; }
+    .check { color: var(--green); font-size: 1.1rem; flex-shrink: 0; margin-top: .1rem; }
+
+    /* ── Tools ── */
+    #tools {}
+    .tools-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem; margin-top: 3rem;
+    }
+    .tool-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem;
+      display: flex; flex-direction: column; gap: .5rem;
+    }
+    .tool-badge {
+      display: inline-flex; align-items: center; gap: .35rem;
+      font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      background: rgba(124,106,245,.1); color: var(--accent2);
+      border: 1px solid rgba(124,106,245,.2); border-radius: 4px;
+      padding: .15rem .55rem; width: fit-content;
+    }
+    .tool-card h3 { font-size: .95rem; font-weight: 700; }
+    .tool-card p { font-size: .83rem; color: var(--muted); line-height: 1.5; }
+    .tool-cmd { font-family: monospace; font-size: .78rem; color: var(--accent3); }
+
+    /* ── Query UI ── */
+    #query-ui { background: var(--surface); }
+    .query-demo {
+      margin-top: 3rem; background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; max-width: 800px;
+    }
+    .query-header {
+      padding: .75rem 1rem; background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted);
+    }
+    .query-body { padding: 1.5rem; }
+    .q-msg {
+      display: flex; gap: .75rem; margin-bottom: 1rem; font-size: .88rem; line-height: 1.6;
+    }
+    .q-avatar {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 700;
+    }
+    .q-user  { background: rgba(56,189,248,.15); color: var(--accent3); border: 1px solid rgba(56,189,248,.2); }
+    .q-claude{ background: rgba(124,106,245,.15); color: var(--accent2); border: 1px solid rgba(124,106,245,.2); }
+    .q-text  { padding-top: .15rem; color: var(--text); }
+    .q-text em { color: var(--accent2); font-style: normal; font-weight: 600; }
+    .cache-badge {
+      display: inline-flex; align-items: center; gap: .35rem;
+      background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.2);
+      color: var(--green); border-radius: 4px; padding: .15rem .55rem;
+      font-size: .72rem; font-weight: 600; margin-top: .75rem;
+    }
+
+    /* ── Getting started ── */
+    #get-started {}
+    .steps-list { margin-top: 2.5rem; display: flex; flex-direction: column; gap: 1.5rem; max-width: 700px; }
+    .gs-step {
+      display: flex; gap: 1.25rem; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem;
+      transition: border-color .2s;
+    }
+    .gs-step:hover { border-color: rgba(124,106,245,.3); }
+    .gs-num {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      background: var(--accent); color: #fff; font-size: .8rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .gs-step h3 { font-size: .95rem; font-weight: 700; margin-bottom: .3rem; }
+    .gs-step code {
+      background: rgba(255,255,255,.06); border: 1px solid var(--border);
+      border-radius: 4px; padding: .1rem .45rem; font-family: monospace;
+      font-size: .82rem; color: var(--accent3);
+    }
+    .gs-step p { font-size: .85rem; color: var(--muted); margin-top: .3rem; }
+
+    /* ── CTA ── */
+    .cta-section {
+      text-align: center; padding: 6rem 1.5rem;
+      background: linear-gradient(to bottom, var(--surface), var(--bg));
+      border-top: 1px solid var(--border);
+      position: relative; overflow: hidden;
+    }
+    .cta-section::before {
+      content: '';
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 300px;
+      background: radial-gradient(ellipse, rgba(124,106,245,.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta-section h2 { font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 800; letter-spacing: -.02em; margin-bottom: .75rem; position: relative; z-index: 1; }
+    .cta-section p { color: var(--muted); margin-bottom: 2rem; position: relative; z-index: 1; }
+    .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; position: relative; z-index: 1; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: .82rem; color: var(--muted);
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    /* ── Pill tags ── */
+    .tag {
+      display: inline-block; background: rgba(56,189,248,.08);
+      border: 1px solid rgba(56,189,248,.2); color: var(--accent3);
+      border-radius: 4px; padding: .15rem .55rem; font-size: .72rem; font-weight: 600;
+      margin: .15rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      nav { padding: 0 1rem; }
+      .nav-links { display: none; }
+      .workflow::before { display: none; }
+      .workflow { gap: 2rem; }
+    }
+
+    /* scroll fade-in */
+    .reveal {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity .5s, transform .5s;
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <a class="nav-logo" href="#">📚 <span>LLM</span> Wiki</a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how-it-works">How it works</a></li>
+    <li><a href="#tools">Commands</a></li>
+    <li><a href="#query-ui">Query UI</a></li>
+    <li><a href="#get-started">Get started</a></li>
+  </ul>
+  <a class="nav-cta" href="https://github.com/maneettaantony/llm-wiki" target="_blank" rel="noopener">View on GitHub →</a>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <div class="hero-badge"><span class="dot"></span> Works with Claude Code CLI &amp; GitHub Copilot</div>
+
+  <h1>Turn research papers into a<br><span class="grad">living knowledge base</span></h1>
+
+  <p class="hero-sub">
+    LLM Wiki extracts key concepts from your PDFs, docs, and articles, weaving them into an interconnected, queryable wiki — with zero manual writing.
+  </p>
+
+  <div class="hero-actions">
+    <a class="btn-primary" href="https://github.com/maneettaantony/llm-wiki" target="_blank" rel="noopener">⭐ Star on GitHub</a>
+    <a class="btn-ghost" href="#get-started">Get started in 3 steps →</a>
+  </div>
+
+  <!-- terminal demo -->
+  <div class="terminal-card">
+    <div class="terminal-bar">
+      <div class="dot-red"></div>
+      <div class="dot-yellow"></div>
+      <div class="dot-green"></div>
+      <span class="terminal-title">llm-wiki — zsh</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-comment"># Drop papers into /raw, then...</span></div>
+      <div><span class="t-prompt">❯ </span><span class="t-cmd">/compile-papers</span></div>
+      <div><span class="t-out">✔ Scanning /raw …  found 5 sources (Attention, BERT, GPT-3, FMs, SLL)</span></div>
+      <div><span class="t-out">✔ Created <span class="t-path">wiki/transformer.md</span> · <span class="t-path">wiki/self-attention.md</span> · 38 more</span></div>
+      <div><span class="t-out">✔ Updated wiki/index.md  — 40 entities indexed</span></div>
+      <br>
+      <div><span class="t-prompt">❯ </span><span class="t-cmd">/sync-wiki</span><span class="t-comment">    # new paper dropped</span></div>
+      <div><span class="t-out">✔ Detected raw/SLL.pdf (new) — extracting concepts …</span></div>
+      <div><span class="t-out">✔ Updated <span class="t-path">wiki/scaling-laws.md</span>  &amp;  3 linked pages</span></div>
+      <br>
+      <div><span class="t-prompt">❯ </span><span class="t-cmd">/launch-wiki-ui</span></div>
+      <div><span class="t-out">✔ Streamlit running on <span class="t-path">http://localhost:8501</span></span></div>
+      <div><span class="t-prompt">❯ </span><span class="t-cursor"></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Stats ── -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div>
+      <div class="stat-val">6+</div>
+      <div class="stat-label">input formats supported</div>
+    </div>
+    <div>
+      <div class="stat-val">9</div>
+      <div class="stat-label">AI-powered skill commands</div>
+    </div>
+    <div>
+      <div class="stat-val">2</div>
+      <div class="stat-label">IDEs: Claude Code + Copilot</div>
+    </div>
+    <div>
+      <div class="stat-val">0</div>
+      <div class="stat-label">manual wiki pages to write</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Features ── -->
+<section id="features">
+  <div class="container">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything you need for a serious AI reading practice</h2>
+    <p class="section-sub">Built around the idea that consuming papers is only half the work — structuring what you learn is the other half.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon">📥</div>
+        <h3>Multi-format ingestion</h3>
+        <p>Accepts PDF, TXT, HTML, DOCX, PPTX, and XLSX. Large PDFs are intelligently chunked so nothing gets dropped.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🔗</div>
+        <h3>Auto-linked entities</h3>
+        <p>Every concept page is rich with <code style="font-family:monospace;font-size:.85em;color:#a78bfa">[[bracket]]</code> links to related concepts, forming a genuine knowledge graph.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🔄</div>
+        <h3>Incremental sync</h3>
+        <p>Add a new paper and run <code style="font-family:monospace;font-size:.85em;color:#38bdf8">/sync-wiki</code>. Only changed or new concepts are updated — existing pages are never overwritten needlessly.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🧪</div>
+        <h3>Quality auditing</h3>
+        <p>Run <code style="font-family:monospace;font-size:.85em;color:#38bdf8">/audit-wiki</code> to surface orphan pages, missing links, contradictions between sources, and stale claims.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">💬</div>
+        <h3>Strictly grounded query UI</h3>
+        <p>A Streamlit chat interface queries <em>only</em> your wiki — no hallucinated outside knowledge. Answers cite their source page (e.g. <code style="font-family:monospace;font-size:.85em;color:#a78bfa">source: bert.md</code>). Unknown topics return an explicit "No information found" with remediation steps.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">📖</div>
+        <h3>Source attribution</h3>
+        <p>Every concept traces back to exact papers and pages. Contradictions across sources are captured as features, not hidden.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🛠️</div>
+        <h3>Dual IDE support</h3>
+        <p>Compile, sync, audit, and reset work in both <strong>Claude Code CLI</strong> and <strong>GitHub Copilot Chat</strong>. The interactive query UI (<code style="font-family:monospace;font-size:.85em;color:#38bdf8">/launch-wiki-ui</code>) is available in Claude Code.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🗂️</div>
+        <h3>Git-native</h3>
+        <p>Your wiki lives as plain Markdown files in a git repo. Version control, diffs, and collaboration come for free.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🌐</div>
+        <h3>Web clipping</h3>
+        <p>Pair with the Obsidian Web Clipper browser extension to capture articles and blog posts directly into <code style="font-family:monospace;font-size:.85em;color:#38bdf8">/raw</code>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Workflow ── -->
+<section id="how-it-works">
+  <div class="container">
+    <div class="section-label">How it works</div>
+    <h2 class="section-title">Three commands. One coherent knowledge base.</h2>
+    <p class="section-sub">Drop sources into <code style="font-family:monospace;color:#38bdf8">/raw</code>, then let the AI handle the rest.</p>
+
+    <div class="workflow reveal">
+      <div class="workflow-step">
+        <div class="step-num">1</div>
+        <h3>Compile</h3>
+        <p>Batch-process all sources from scratch. Extracts every key concept and creates structured entity pages.</p>
+        <div class="step-cmd">/compile-papers</div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">2</div>
+        <h3>Sync</h3>
+        <p>Added a new paper? Sync detects what changed and incrementally updates only the relevant pages.</p>
+        <div class="step-cmd">/sync-wiki</div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">3</div>
+        <h3>Audit</h3>
+        <p>Once you've grown to ~20+ pages, audit checks for quality issues: orphans, broken links, contradictions.</p>
+        <div class="step-cmd">/audit-wiki</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Entity format ── -->
+<section id="entity-format" style="background: var(--surface);">
+  <div class="container">
+    <div class="section-label">Entity format</div>
+    <h2 class="section-title">Structured, interlinked, citable</h2>
+    <p class="section-sub">Every generated page follows a consistent template — definition, explanation, related concepts, and sources.</p>
+
+    <div class="entity-split reveal">
+      <div>
+        <div class="entity-card">
+          <div class="entity-card-header">wiki/transformer.md</div>
+          <div class="entity-card-body">
+            <div class="md-h1"># Transformer</div>
+            <div class="md-muted">Neural architecture using self-attention.</div>
+            <br>
+            <div class="md-h2">## Summary</div>
+            <div>Introduced in "Attention is All You Need" (2017), the Transformer replaced recurrence with multi-head self-attention, enabling massively parallel training.</div>
+            <br>
+            <div class="md-h2">## Related Concepts</div>
+            <div>- <span class="md-link">[[self-attention]]</span> — core mechanism</div>
+            <div>- <span class="md-link">[[positional-encoding]]</span> — injects order</div>
+            <div>- <span class="md-link">[[feed-forward-network]]</span> — per-token MLP</div>
+            <br>
+            <div class="md-h2">## Sources</div>
+            <div class="md-muted">Vaswani et al. — "Attention is All You Need" (2017)</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <ul class="benefit-list">
+          <li><span class="check">✓</span> One concept per file, kebab-case filenames keep everything predictable and grep-able.</li>
+          <li><span class="check">✓</span> <code style="font-family:monospace;font-size:.85em;color:#a78bfa">[[bracket]]</code> links create a genuine knowledge graph you can visualise in Obsidian.</li>
+          <li><span class="check">✓</span> Sources section traces every claim back to a specific paper and year — no phantom knowledge.</li>
+          <li><span class="check">✓</span> Contradictions between sources are documented explicitly, capturing the nuance of the field.</li>
+          <li><span class="check">✓</span> Plain Markdown — readable anywhere, no proprietary lock-in.</li>
+        </ul>
+
+        <div style="margin-top: 2rem;">
+          <div style="font-size:.82rem; color:var(--muted); margin-bottom:.5rem;">Topics auto-extracted from papers like:</div>
+          <span class="tag">transformer</span>
+          <span class="tag">self-attention</span>
+          <span class="tag">BERT</span>
+          <span class="tag">scaling laws</span>
+          <span class="tag">RLHF</span>
+          <span class="tag">foundation models</span>
+          <span class="tag">in-context learning</span>
+          <span class="tag">emergence</span>
+          <span class="tag">hallucination</span>
+          <span class="tag">BPE</span>
+          <span class="tag">LoRA</span>
+          <span class="tag">GPT-3</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Commands ── -->
+<section id="tools">
+  <div class="container">
+    <div class="section-label">Commands</div>
+    <h2 class="section-title">The same commands, wherever you code</h2>
+    <p class="section-sub">All commands are available flat — no namespaces. Commands work in both Claude Code CLI and GitHub Copilot Chat (Copilot uses slightly different names). The query UI is Claude Code only.</p>
+
+    <div style="font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);margin-top:3rem;margin-bottom:1rem;">Wiki Skills — build &amp; maintain the knowledge base</div>
+    <div class="tools-grid reveal">
+      <div class="tool-card">
+        <div class="tool-badge">compile</div>
+        <h3>/compile-papers</h3>
+        <div class="tool-cmd">Claude Code &nbsp;·&nbsp; Copilot: <em>Compile Papers to Wiki</em></div>
+        <p>Batch-processes every file in <code style="font-family:monospace;color:#38bdf8">/raw</code>, creates entity pages, and builds the index from scratch. Blocks if wiki already has content — run <code style="font-family:monospace;color:#38bdf8">/reset-wiki</code> first.</p>
+      </div>
+      <div class="tool-card">
+        <div class="tool-badge">sync</div>
+        <h3>/sync-wiki</h3>
+        <div class="tool-cmd">Claude Code &nbsp;·&nbsp; Copilot: <em>Sync Wiki from Raw</em></div>
+        <p>Detects files in <code style="font-family:monospace;color:#38bdf8">/raw</code> not yet logged in <code style="font-family:monospace;color:#38bdf8">wiki/log.md</code> and incrementally updates only the affected pages — existing content is never needlessly overwritten.</p>
+      </div>
+      <div class="tool-card">
+        <div class="tool-badge">audit</div>
+        <h3>/audit-wiki</h3>
+        <div class="tool-cmd">Claude Code &nbsp;·&nbsp; Copilot: <em>Audit Wiki</em></div>
+        <p>Scans for quality issues: orphan pages, missing linked concepts, cross-source contradictions, and stale claims. Run every ~20–30 new pages or before sharing.</p>
+      </div>
+      <div class="tool-card">
+        <div class="tool-badge">reset</div>
+        <h3>/reset-wiki</h3>
+        <div class="tool-cmd">Claude Code &nbsp;·&nbsp; Copilot: <em>Reset Wiki</em></div>
+        <p>Smart state guard: if wiki is empty it scaffolds the index &amp; log; if content exists it summarises and offers options. Pass the <code style="font-family:monospace;color:#38bdf8">reset</code> argument to force-wipe all entity pages.</p>
+      </div>
+      <div class="tool-card">
+        <div class="tool-badge">ui</div>
+        <h3>/launch-wiki-ui</h3>
+        <div class="tool-cmd">Claude Code &nbsp;·&nbsp; Copilot: <em>Launch Wiki UI</em></div>
+        <p>Checks that <code style="font-family:monospace;color:#38bdf8">streamlit</code> and <code style="font-family:monospace;color:#38bdf8">litellm</code> are installed, reports available wiki pages, then starts the Streamlit query interface at localhost:8501.</p>
+      </div>
+      <div class="tool-card">
+        <div class="tool-badge">ui</div>
+        <h3>/stop-wiki-ui</h3>
+        <div class="tool-cmd">Claude Code &nbsp;·&nbsp; Copilot: <em>Stop Wiki UI</em></div>
+        <p>Checks whether the Streamlit process is running, kills it if active, and confirms it is stopped. Companion to <code style="font-family:monospace;color:#38bdf8">/launch-wiki-ui</code>.</p>
+      </div>
+    </div>
+
+    <div style="font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-top:3rem;margin-bottom:1rem;">Repo Maintenance Skills — keep the repo healthy</div>
+    <div class="tools-grid reveal">
+      <div class="tool-card" style="border-color:rgba(52,211,153,.15);">
+        <div class="tool-badge" style="background:rgba(52,211,153,.1);color:#34d399;border-color:rgba(52,211,153,.2);">docs</div>
+        <h3>/sync-docs</h3>
+        <div class="tool-cmd">Claude Code &nbsp;·&nbsp; Copilot: <em>Sync Docs</em></div>
+        <p>Detects changed files via <code style="font-family:monospace;color:#38bdf8">git diff</code>, maps them to affected doc surfaces (README, GitHub Pages, copilot-instructions), and applies targeted edits — never rewrites entire files.</p>
+      </div>
+      <div class="tool-card" style="border-color:rgba(52,211,153,.15);">
+        <div class="tool-badge" style="background:rgba(52,211,153,.1);color:#34d399;border-color:rgba(52,211,153,.2);">health</div>
+        <h3>/run-maintenance</h3>
+        <div class="tool-cmd">Claude Code &nbsp;·&nbsp; Copilot: <em>Run Maintenance</em></div>
+        <p>Runs the full pytest suite, verifies every skill is registered in both Claude Code and Copilot, checks wiki health and unsynced sources, inspects git status, and saves a dated report to <code style="font-family:monospace;color:#38bdf8">reports/</code>.</p>
+      </div>
+      <div class="tool-card" style="border-color:rgba(52,211,153,.15);">
+        <div class="tool-badge" style="background:rgba(52,211,153,.1);color:#34d399;border-color:rgba(52,211,153,.2);">slides</div>
+        <h3>/regenerate-presentation</h3>
+        <div class="tool-cmd">Claude Code &nbsp;·&nbsp; Copilot: <em>Regenerate Presentation</em></div>
+        <p>Detects which generator scripts or skill files changed via git, rebuilds only stale assets (terminal/UI demo videos + PPTX deck), and verifies both videos are embedded in the deck.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Query UI ── -->
+<section id="query-ui" style="background: var(--surface);">
+  <div class="container">
+    <div class="section-label">Query UI</div>
+    <h2 class="section-title">Chat with your entire wiki</h2>
+    <p class="section-sub">
+      Run <code style="font-family:monospace;color:#38bdf8">/launch-wiki-ui</code> to open a guided 3-screen Streamlit interface. Configure your model and API key, confirm which wiki pages are loaded, then chat — answers are grounded <em>strictly</em> in your wiki.
+    </p>
+
+    <!-- 3-screen flow pills -->
+    <div style="display:flex; gap:.75rem; margin-top:1.75rem; flex-wrap:wrap; align-items:center;">
+      <div style="display:flex;align-items:center;gap:.5rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.5rem 1rem;font-size:.82rem;">
+        <span style="color:var(--accent2);font-weight:700;">①</span> Settings
+        <span style="font-size:.7rem;color:var(--muted);">Model ID + API key</span>
+      </div>
+      <div style="color:var(--muted);font-size:.9rem;">→</div>
+      <div style="display:flex;align-items:center;gap:.5rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.5rem 1rem;font-size:.82rem;">
+        <span style="color:var(--accent2);font-weight:700;">②</span> Wiki Confirmation
+        <span style="font-size:.7rem;color:var(--muted);">Review loaded pages</span>
+      </div>
+      <div style="color:var(--muted);font-size:.9rem;">→</div>
+      <div style="display:flex;align-items:center;gap:.5rem;background:var(--bg);border:1px solid rgba(124,106,245,.3);border-radius:8px;padding:.5rem 1rem;font-size:.82rem;">
+        <span style="color:var(--accent2);font-weight:700;">③</span> Chat
+        <span style="font-size:.7rem;color:var(--green);">wiki-grounded answers</span>
+      </div>
+    </div>
+
+    <div class="query-demo reveal" style="margin-top:2rem;">
+      <div class="query-header">
+        🤖 LLM Wiki Query — gpt-4o &nbsp;·&nbsp; 12 pages loaded
+        <span style="margin-left:auto; color:var(--green)">● connected</span>
+      </div>
+      <div class="query-body">
+        <div class="q-msg">
+          <div class="q-avatar q-user">U</div>
+          <div class="q-text">How does BERT's masked language modeling differ from GPT-3's autoregressive approach, and which is better for embeddings?</div>
+        </div>
+        <div class="q-msg">
+          <div class="q-avatar q-claude">C</div>
+          <div class="q-text">
+            <em>BERT</em> uses a <em>masked language model (MLM)</em> objective — randomly masking 15% of tokens and predicting them bidirectionally. Full left+right context makes BERT representations excellent for classification, NER, and QA tasks where the full sentence is available at inference time.<br><br>
+            <em>GPT-3</em> uses an <em>autoregressive</em> objective — predicting the next token given only left context. This makes it exceptional for generation and few-shot prompting. Your <em>scaling-laws.md</em> page notes that sufficiently large autoregressive models begin to match BERT-style encoders on many benchmarks.<br><br>
+            For embeddings specifically, BERT wins — bidirectionality captures richer semantic context per token.
+            <div style="font-size:.75rem; color:var(--muted); margin-top:.6rem; font-style:italic;">(source: bert.md, gpt3.md, scaling-laws.md)</div>
+            <!-- token metrics -->
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.9rem;">
+              <div class="cache-badge">↑ input 1,204</div>
+              <div class="cache-badge">↓ output 187</div>
+              <div class="cache-badge">⚡ cache read 18,432</div>
+              <div class="cache-badge">✍ cache write 0</div>
+            </div>
+          </div>
+        </div>
+        <!-- "no info found" example -->
+        <div class="q-msg" style="margin-top:.5rem;">
+          <div class="q-avatar q-user">U</div>
+          <div class="q-text">What is LoRA fine-tuning?</div>
+        </div>
+        <div class="q-msg">
+          <div class="q-avatar q-claude">C</div>
+          <div class="q-text" style="border-left:2px solid rgba(255,200,100,.25);padding-left:.75rem;">
+            <strong style="color:#fbbf24;">No information found in the wiki for this query.</strong><br>
+            <span style="color:var(--muted);font-size:.85rem;">The wiki does not currently cover this topic. To enable answers: add a relevant PDF/DOCX/TXT to <code style="font-family:monospace;color:#38bdf8">raw/</code>, then run <code style="font-family:monospace;color:#38bdf8">/sync-wiki</code>.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:1.75rem; display:flex; gap:1.5rem; flex-wrap:wrap; align-items:flex-start;">
+      <div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem;">Works with any major LLM provider — enter the model ID directly:</div>
+        <span class="tag">gpt-4o</span>
+        <span class="tag">claude-opus-4-7</span>
+        <span class="tag">gemini/gemini-2.0-flash</span>
+        <span class="tag">mistral/mistral-large-latest</span>
+        <span class="tag">cohere/command-r-plus</span>
+      </div>
+      <div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem;">Security:</div>
+        <span class="tag">API key session-only</span>
+        <span class="tag">never written to disk</span>
+        <span class="tag">model ID validated</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Getting started ── -->
+<section id="get-started">
+  <div class="container">
+    <div class="section-label">Get started</div>
+    <h2 class="section-title">Up and running in minutes</h2>
+
+    <div class="steps-list">
+      <div class="gs-step reveal">
+        <div class="gs-num">1</div>
+        <div>
+          <h3>Clone &amp; configure</h3>
+          <p>Clone the repo. For the query UI, have an API key ready from any major LLM provider (Anthropic, OpenAI, Google, Mistral, Cohere, etc.). No other setup required.</p>
+          <p style="margin-top:.5rem; font-family:monospace; font-size:.82rem; color:var(--accent3)">git clone https://github.com/maneettaantony/llm-wiki.git</p>
+        </div>
+      </div>
+      <div class="gs-step reveal">
+        <div class="gs-num">2</div>
+        <div>
+          <h3>Drop your sources into <code>/raw</code></h3>
+          <p>PDF, DOCX, TXT, HTML, PPTX, or XLSX — anything goes. The Attention paper, BERT, GPT-3, and Scaling Laws papers are included as examples.</p>
+        </div>
+      </div>
+      <div class="gs-step reveal">
+        <div class="gs-num">3</div>
+        <div>
+          <h3>Run <code>/compile-papers</code></h3>
+          <p>Open Claude Code CLI or GitHub Copilot Chat and run the command. Your wiki populates automatically — structured, linked, and indexed.</p>
+        </div>
+      </div>
+      <div class="gs-step reveal">
+        <div class="gs-num">4</div>
+        <div>
+          <h3>Query with <code>/launch-wiki-ui</code></h3>
+          <p>A 3-screen flow: enter your model ID and API key → confirm loaded wiki pages → chat. Answers are grounded strictly in your wiki and cite the source page. Topics not yet covered return an explicit "No information found" with instructions on which file to add.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<div class="cta-section">
+  <h2>Stop re-reading the same papers.<br>Build the wiki once.</h2>
+  <p>LLM Wiki is open source, MIT licensed, and ready to use today.</p>
+  <div class="cta-buttons">
+    <a class="btn-primary" href="https://github.com/maneettaantony/llm-wiki" target="_blank" rel="noopener">⭐ Star on GitHub</a>
+    <a class="btn-ghost" href="https://github.com/maneettaantony/llm-wiki/fork" target="_blank" rel="noopener">Fork &amp; customize →</a>
+  </div>
+</div>
+
+<!-- ── Footer ── -->
+<footer>
+  <p>
+    Built by <a href="https://github.com/maneettaantony" target="_blank" rel="noopener">Maneetta Antony</a> &nbsp;·&nbsp;
+    <a href="https://github.com/maneettaantony/llm-wiki/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a> &nbsp;·&nbsp;
+    Inspired by Andrej Karpathy's knowledge-building philosophy
+  </p>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

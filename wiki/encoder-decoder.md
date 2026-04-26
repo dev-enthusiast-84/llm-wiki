@@ -1,43 +1,57 @@
-# Encoder-Decoder Architecture
+# Encoder-Decoder
 
-**Source:** "Attention Is All You Need" — Vaswani et al., 2017 (NIPS)
+An architectural pattern where an encoder maps inputs to a latent representation and a decoder generates outputs from that representation.
 
 ## Summary
 
-The encoder-decoder (seq2seq) architecture maps an input sequence to a continuous representation, then auto-regressively generates an output sequence. The [[transformer]] is the first encoder-decoder model built entirely on [[self-attention]] rather than recurrence.
+The encoder-decoder (seq2seq) architecture processes an input sequence into a continuous representation and then generates an output sequence from it. Originally used with RNNs for machine translation, the Transformer adopted this pattern with self-attention replacing recurrence. The encoder produces rich contextualized representations, and the decoder attends to them via cross-attention while auto-regressively generating output tokens. BERT uses only the encoder; GPT uses only the decoder; models like T5 and the original Transformer use the full encoder-decoder structure.
 
 ## Explanation
 
-**Encoder:**
-- Stack of N=6 identical layers
-- Each layer: [[multi-head-attention]] sub-layer + [[feed-forward-network]] sub-layer
-- Each sub-layer wrapped in [[residual-connection]] + [[layer-normalization]]
-- Maps input (x_1, ..., x_n) → continuous representations z = (z_1, ..., z_n)
+### Encoder
 
-**Decoder:**
-- Stack of N=6 identical layers
-- Each layer: three sub-layers
-  1. Masked [[multi-head-attention]] (prevents attending to future positions)
-  2. Cross-attention over encoder output (queries from decoder, keys/values from encoder)
-  3. [[feed-forward-network]]
-- Each sub-layer wrapped in [[residual-connection]] + [[layer-normalization]]
-- Auto-regressive: consumes previously generated symbols as additional input
+The encoder maps an input sequence $(x_1, \ldots, x_n)$ to a sequence of continuous representations $\mathbf{z} = (z_1, \ldots, z_n)$. In the Transformer, this is done by stacking N=6 identical layers, each containing:
+1. Multi-head self-attention (all positions attend to all positions)
+2. Position-wise feed-forward network
+3. Residual connection + layer normalization around each
 
-**Cross-attention (encoder-decoder attention):** Allows every decoder position to attend to all encoder positions, mimicking the attention mechanism in earlier seq2seq models (e.g., Bahdanau et al., 2014). This is where the "translation" information flows from source to target.
+The output is a rich, context-aware representation of every input token.
 
-**Prior work this replaces:**
-- RNN/LSTM encoder-decoder (Sutskever et al., 2014; Cho et al., 2014)
-- ConvS2S (Gehring et al., 2017) — convolutional, O(log n) path length
-- ByteNet (Kalchbrenner et al., 2017) — convolutional, O(log n) path length
+### Decoder
 
-The [[transformer]] reduces cross-position path length to O(1), enabling better long-range dependency learning.
+The decoder generates output tokens $(y_1, \ldots, y_m)$ one at a time, auto-regressively. Each of its N layers contains:
+1. **Masked self-attention**: attends only to previously generated output tokens (causal masking)
+2. **Cross-attention**: attends to the encoder's output $\mathbf{z}$
+3. **Feed-forward network**
+4. Residual + layer norm around each
+
+The masking ensures the model is auto-regressive: prediction of $y_t$ depends only on $(y_1, \ldots, y_{t-1})$ and $\mathbf{z}$.
+
+### Variants by Architecture Type
+
+| Architecture | Encoder | Decoder | Examples |
+|---|---|---|---|
+| Encoder-only | ✓ | ✗ | BERT, RoBERTa |
+| Decoder-only | ✗ | ✓ | GPT-3, LLaMA |
+| Encoder-decoder | ✓ | ✓ | T5, original Transformer, BART |
+
+Encoder-only models excel at classification and representation tasks. Decoder-only models excel at generation. Encoder-decoder models are natural for tasks with distinct input and output sequences (translation, summarization).
 
 ## Related Concepts
 
-- [[transformer]]
-- [[self-attention]]
-- [[multi-head-attention]]
-- [[layer-normalization]]
-- [[residual-connection]]
-- [[feed-forward-network]]
-- [[positional-encoding]]
+- [[transformer]] — Uses encoder-decoder as its overall architecture
+- [[self-attention]] — Used within both encoder and decoder
+- [[multi-head-attention]] — The cross-attention layer is multi-head attention from decoder to encoder
+- [[bert]] — Encoder-only variant; bidirectional attention throughout
+- [[gpt-3]] — Decoder-only variant; causal attention throughout
+- [[bleu]] — Primary evaluation metric for machine translation (the canonical encoder-decoder task)
+
+## Sources
+
+- Vaswani et al. — "Attention Is All You Need" (2017) — Section 3.1
+- Wikipedia — "Transformer (deep learning)"
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

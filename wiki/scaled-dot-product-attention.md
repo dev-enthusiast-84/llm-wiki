@@ -1,35 +1,52 @@
 # Scaled Dot-Product Attention
 
-**Source:** "Attention Is All You Need" — Vaswani et al., 2017 (NIPS)
+The specific attention function used in Transformers: dot-product similarity scaled by the square root of key dimension.
 
 ## Summary
 
-Scaled Dot-Product Attention is the specific attention function used in the [[transformer]]. It computes attention weights via scaled dot products between queries and keys, then applies them to values.
+Scaled Dot-Product Attention computes attention weights by taking dot products of queries against all keys, dividing by $\sqrt{d_k}$ to counteract magnitude growth, applying softmax to get a probability distribution, and using those weights to aggregate the values. It is the core computation inside both self-attention and cross-attention in the Transformer. The scaling factor is the key innovation over vanilla dot-product attention, stabilizing gradients for large $d_k$.
 
 ## Explanation
 
-**Formula:**
+### Formula
 
-```
-Attention(Q, K, V) = softmax(QKᵀ / √d_k) · V
-```
+$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
 
-- Q: matrix of queries (dimension d_k)
-- K: matrix of keys (dimension d_k)
-- V: matrix of values (dimension d_v)
-- √d_k: scaling factor
+Where:
+- $Q \in \mathbb{R}^{n \times d_k}$ — matrix of query vectors
+- $K \in \mathbb{R}^{m \times d_k}$ — matrix of key vectors
+- $V \in \mathbb{R}^{m \times d_v}$ — matrix of value vectors
+- $d_k$ — dimension of keys (also queries)
 
-**Why the scaling?** For large d_k, dot products grow large in magnitude, pushing softmax into regions with extremely small gradients. Dividing by √d_k counteracts this. Formally, if q and k have independent components with mean 0 and variance 1, then q·k has variance d_k — scaling normalizes this back to unit variance.
+### Why the Scaling?
 
-**Comparison with additive attention (Bahdanau et al.):**
-- Additive attention uses a feed-forward network with a single hidden layer to compute compatibility
-- Both have similar theoretical complexity, but dot-product attention is faster and more space-efficient due to optimized matrix multiplication
-- At small d_k, both perform similarly; additive attention outperforms unscaled dot-product at large d_k
+For large $d_k$, dot products grow large in magnitude, pushing the softmax into regions with extremely small gradients. Dividing by $\sqrt{d_k}$ counteracts this: if $q$ and $k$ are independent random variables with mean 0 and variance 1, their dot product has variance $d_k$, so dividing by $\sqrt{d_k}$ restores unit variance.
 
-**Masking:** In the decoder, illegal future positions are masked by setting their pre-softmax values to −∞, which zeroes out those attention weights after softmax.
+### Masked Variant
+
+In the decoder, a mask is applied before softmax to prevent positions from attending to future positions:
+$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T + M}{\sqrt{d_k}}\right)V$$
+where $M_{ij} = -\infty$ for $j > i$ (future positions) and $0$ otherwise.
+
+### Comparison with Additive Attention
+
+The two most common attention functions:
+- **Additive (Bahdanau)**: uses a feed-forward network with one hidden layer
+- **Dot-Product (this)**: faster and more space-efficient; identical in theoretical complexity
+
+For small $d_k$ both are similar; for large $d_k$, dot-product without scaling performs worse, but with scaling it outperforms additive attention.
 
 ## Related Concepts
 
-- [[multi-head-attention]]
-- [[self-attention]]
-- [[transformer]]
+- [[self-attention]] — Uses this computation; queries, keys, values come from the same sequence
+- [[multi-head-attention]] — Applies this function h times in parallel with different projections
+- [[transformer]] — The architecture that introduced and popularized this formulation
+
+## Sources
+
+- Vaswani et al. — "Attention Is All You Need" (2017) — Section 3.2.1
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

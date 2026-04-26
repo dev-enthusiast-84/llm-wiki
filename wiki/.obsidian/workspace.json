@@ -1,20 +1,20 @@
 {
   "main": {
-    "id": "04d4718ceb5ed7bb",
+    "id": "aee26c18d8210be1",
     "type": "split",
     "children": [
       {
-        "id": "b4ca6af3a4c6b122",
+        "id": "7e47eeec479eb4a2",
         "type": "tabs",
         "children": [
           {
-            "id": "882cfc7b6199b882",
+            "id": "de4bf810570d7fcd",
             "type": "leaf",
             "state": {
-              "type": "empty",
+              "type": "graph",
               "state": {},
-              "icon": "lucide-file",
-              "title": "New tab"
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
             }
           }
         ]
@@ -23,15 +23,15 @@
     "direction": "vertical"
   },
   "left": {
-    "id": "93739dc29054b7d5",
+    "id": "2f0836491a708491",
     "type": "split",
     "children": [
       {
-        "id": "396ddcfc2099886a",
+        "id": "2a3c5a2a6bb75c13",
         "type": "tabs",
         "children": [
           {
-            "id": "66779e817d708e4d",
+            "id": "3903b178de5329a5",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -44,7 +44,7 @@
             }
           },
           {
-            "id": "a29c7d808f249b15",
+            "id": "c94c5c1ec0b4dffc",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -61,7 +61,7 @@
             }
           },
           {
-            "id": "cfdda42f21081789",
+            "id": "3b06734307706dc0",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
@@ -74,24 +74,22 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
-    "id": "04cdb4650c508ae5",
+    "id": "226210fb5398516d",
     "type": "split",
     "children": [
       {
-        "id": "d183e3d04057379e",
+        "id": "b4a34b4956064c39",
         "type": "tabs",
         "children": [
           {
-            "id": "aea5f24bd621e0fa",
+            "id": "c37a45f87bf4aa91",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
-                "file": "encoder-decoder.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -101,25 +99,24 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for encoder-decoder"
+              "title": "Backlinks"
             }
           },
           {
-            "id": "1f8d5de6348dba79",
+            "id": "b42064611dd8b120",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "encoder-decoder.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from encoder-decoder"
+              "title": "Outgoing links"
             }
           },
           {
-            "id": "48c00df9f6a5b85c",
+            "id": "51d51ad1dd1cdb85",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -134,7 +131,7 @@
             }
           },
           {
-            "id": "9aef51abe4e37c39",
+            "id": "7308b44ab80e1b68",
             "type": "leaf",
             "state": {
               "type": "all-properties",
@@ -148,18 +145,17 @@
             }
           },
           {
-            "id": "679764baa4e1115d",
+            "id": "dc359361b4a4ce49",
             "type": "leaf",
             "state": {
               "type": "outline",
               "state": {
-                "file": "encoder-decoder.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of encoder-decoder"
+              "title": "Outline"
             }
           }
         ]
@@ -180,13 +176,30 @@
       "bases:Create new base": false
     }
   },
-  "active": "882cfc7b6199b882",
+  "active": "de4bf810570d7fcd",
   "lastOpenFiles": [
-    "Untitled.base",
-    "encoder-decoder.md",
-    "transformer.md",
+    "vanishing-gradient.md",
+    "lstm.md",
+    "recurrent-neural-network.md",
+    "small-language-model.md",
+    "bleu.md",
+    "glue.md",
+    "instructgpt.md",
+    "reward-model.md",
+    "rlhf.md",
+    "distribution-shift.md",
+    "data-contamination.md",
+    "ai-safety-alignment.md",
     "hallucination.md",
+    "scaling-laws.md",
+    "homogenization.md",
+    "emergence.md",
+    "foundation-model.md",
     "autoregressive-language-model.md",
-    "adaptation.md"
+    "log.md",
+    "feed-forward-network.md",
+    "encoder-decoder.md",
+    "cls-sep-tokens.md",
+    "byte-pair-encoding.md"
   ]
 }

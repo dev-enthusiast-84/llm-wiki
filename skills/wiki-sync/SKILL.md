@@ -1,33 +1,46 @@
 ---
 name: wiki-sync
-description: 'Sync new sources from /raw folder with existing wiki pages. Update affected entities, create new pages, maintain index and log. Use when adding new papers to /raw.'
-argument-hint: 'Source filename or description from /raw folder'
+description: 'Scan /raw for files not yet in log.md and incrementally update the wiki. Updates affected entities, creates new pages, maintains index and log. Use when adding new files to /raw.'
+argument-hint: 'No argument needed — new sources are detected automatically from /raw vs log.md'
 ---
 
 # Wiki Sync
 
-Incremental wiki updates by syncing new sources from the `/raw` folder with existing entity pages.
+Scan `/raw` for source files not yet compiled into the wiki, then incrementally update entity pages and create new ones.
+
+## Supported Source Formats
+
+| Format | Read method | Limitations |
+|--------|-------------|-------------|
+| `.pdf` | Read tool (native) | Images/diagrams not extracted; PDFs >20 pages require reading in page-range chunks |
+| `.txt` | Read tool (native) | None |
+| `.html` | Read tool, then strip tags with Python if output is noisy | Inline JS/CSS may add noise; complex layouts may lose structure |
+| `.pptx` | `python3 -c "from pptx import Presentation; prs=Presentation('raw/FILE.pptx'); [print(s.text_frame.text) for slide in prs.slides for s in slide.shapes if s.has_text_frame]"` | Only text extracted; charts, images, diagrams, and speaker notes are lost |
+| `.docx` | `python3 -c "import docx; doc=docx.Document('raw/FILE.docx'); print('\n'.join(p.text for p in doc.paragraphs if p.text.strip()))"` | Tables, images, headers/footers, and text boxes not extracted |
+| `.xlsx` | `python3 -c "import openpyxl; wb=openpyxl.load_workbook('raw/FILE.xlsx',read_only=True,data_only=True); [print(ws.title,[[str(c.value) for c in r] for r in ws.iter_rows()]) for ws in wb.worksheets]"` | Only cell values extracted; formulas shown as last-computed result; charts, images, and formatting lost |
+| other | Skip — report filename and extension as unsupported | — |
 
 ## When to Use
 
-- **New paper added**: A new source appears in `/raw` that needs to be integrated
-- **New research**: Updating wiki with recent findings or alternative viewpoints
-- **Ongoing compilation**: Regularly processing batches of papers
-- **Before audit**: Sync everything before running quality checks
+- A new file has been dropped into `/raw` and the wiki already has content
+- Running a batch catch-up after several files were added at once
+- Before an audit — ensure everything in `/raw` is reflected in the wiki
 
 ## Procedure
 
-### 1. Read New Source
+### 1. Detect New Sources
 
-- Identify the new source file in `/raw`
-- Read it alongside relevant existing `wiki/` pages
-- Take note of:
-  - Key concepts introduced
-  - Definitions and explanations
-  - Relationships to existing concepts
-  - Any contradictions with previous understanding
+List all files in `raw/` with supported extensions. Cross-reference against the "Source" column in `wiki/log.md`. Files not yet logged are the ones to process.
 
-### 2. Update Existing Entity Pages
+If nothing is new: report "Wiki is up to date." and stop.
+
+### 2. Read New Source
+
+- Identify the new source file in `/raw` and read it using the appropriate method
+- For PDFs >20 pages, read in page-range chunks
+- Note the filename — it becomes the log entry identifier
+
+### 3. Update Existing Entity Pages
 
 For each concept that appears in both new source and existing wiki:
 - **Revise explanations** if new source provides more accurate or comprehensive understanding
@@ -37,7 +50,7 @@ For each concept that appears in both new source and existing wiki:
 
 See [Update Checklist](./references/update-checklist.md) for detailed guidance.
 
-### 3. Create New Entity Pages
+### 4. Create New Entity Pages
 
 For concepts introduced only in the new source:
 - Create new markdown files in `wiki/` following [Entity Template](./assets/entity-template.md)
@@ -45,38 +58,41 @@ For concepts introduced only in the new source:
 - Link to related existing entities using `[[brackets]]`
 - Always cite the new source in the Sources section
 
-### 4. Maintain Wiki Structure
-
-Update organizational files:
+### 5. Maintain Wiki Structure
 
 **Update `wiki/index.md`**:
 - Add any new entities to appropriate categories
 - Re-sort alphabetically if needed
 
-**Update/Create `wiki/log.md`** (when wiki reaches 30+ pages):
-```markdown
-| Date | Source | Entities Added | Entities Updated | Notes |
-|------|--------|---|---|---|
-| 2026-04-20 | "Paper Title" (2024) | concept1, concept2 | existing-concept | Noted contradiction with earlier definition |
-```
+**Update `wiki/log.md`**:
+- Add a row per source file processed
+- Update the Summary block (Total pages, Last updated, Last source)
 
 See [Log Format Reference](./references/log-format.md).
 
 ## Example Workflow
 
 ```
-New source: "Latest LLM Survey 2026" added to /raw/
+/raw/ now contains: attention.pdf (logged), new-survey.pdf (NOT logged)
 ↓
-Read alongside: transformer.md, bert.md, gpt-3.md
+Detect: new-survey.pdf is new
 ↓
-Update: transformer.md (new variants), add contradictions to bert.md
+Read new-survey.pdf
+↓
+Update: transformer.md (new variants), bert.md (contradiction noted)
 ↓
 Create: new-concept1.md, new-concept2.md
 ↓
-Add to: wiki/index.md categories
-↓
-Log: Added 2 new concepts, updated 2 existing pages
+Add to: wiki/index.md, wiki/log.md
 ```
+
+## Relation to Other Skills
+
+| Skill | When to Use |
+|-------|-------------|
+| `reset-wiki` | Use instead of this skill when you want to start over entirely — wipes all pages before a fresh compile |
+| `compile-papers` | Use instead of this skill when wiki is empty — bulk-compiles the first batch of papers |
+| `audit-wiki` | Run after 20+ pages to check for orphans, missing links, and stale claims introduced by incremental syncs |
 
 ## Best Practices
 
@@ -85,7 +101,6 @@ Log: Added 2 new concepts, updated 2 existing pages
 - **Source attribution**: Always trace back to specific papers
 - **Contradiction handling**: Document when sources disagree; don't assume one is "correct"
 - **Iterative**: You may need to create missing pages as you discover new connections
-- **Commit frequently**: Commit after syncing each source
 
 ## Reference Files
 

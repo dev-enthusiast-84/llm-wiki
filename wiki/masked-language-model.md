@@ -1,48 +1,52 @@
-# Masked Language Model (MLM)
+# Masked Language Model
 
-**Source:** "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" — Devlin et al., 2019
+A self-supervised pre-training objective where random tokens are masked and the model learns to predict them from context.
 
 ## Summary
 
-Masked Language Model (MLM) is the primary pre-training objective for [[bert]]. It randomly masks a fraction of input tokens and trains the model to predict them from context on both sides, enabling deep bidirectional [[self-attention]].
+Masked Language Modeling (MLM) is the primary pre-training objective used in BERT. Rather than predicting the next token (as in autoregressive language models), MLM randomly masks a fraction of input tokens and trains the model to reconstruct them using both left and right context. This enables fully bidirectional representations — every token's representation is influenced by all surrounding tokens — which is crucial for understanding tasks.
 
 ## Explanation
 
-**Why MLM is necessary:**  
-Standard left-to-right language models cannot be used to train a bidirectional model because bidirectional conditioning would let each word "see itself" in a multi-layered context, allowing the model to trivially predict the target. MLM breaks this circularity by masking the target tokens first.
+### Procedure
 
-**Procedure:**  
-15% of [[wordpiece]] tokens are randomly selected for prediction. Of those selected tokens:
-- 80% are replaced with a `[MASK]` token
-- 10% are replaced with a random token from the vocabulary
-- 10% are left unchanged
+In BERT's implementation, 15% of all WordPiece tokens are selected for prediction. Of those selected tokens:
+- **80%** are replaced with the special `[MASK]` token
+- **10%** are replaced with a random vocabulary token
+- **10%** are left unchanged
 
-**Why the 80/10/10 split?**  
-The `[MASK]` token never appears at fine-tuning time, creating a pre-training/fine-tuning mismatch. The 10% random replacement and 10% unchanged cases force the model to maintain a meaningful contextual representation for *every* token (not just masked ones), since it cannot know which tokens will be asked to predict. Random replacement accounts for only 1.5% of all tokens total, causing minimal harm to language understanding.
+The model must predict the original token at all selected positions. The three-way split prevents the model from simply learning "if I see [MASK], output whatever" — the 10% random and 10% unchanged cases force the model to maintain a contextual representation of all tokens at all times.
 
-**Training signal:** Only 15% of tokens are predicted per batch (vs 100% for left-to-right LM). This means MLM requires more pre-training steps to converge, though it outperforms LTR in absolute accuracy almost immediately.
+### Why Not Just Mask?
 
-**Ablation (Table 8 in paper):**  
-Using only `[MASK]` (100% masking) is problematic for feature-based approaches (NER). The mixed strategy is most robust across tasks.
+Replacing all selected tokens with `[MASK]` creates a train-test mismatch: `[MASK]` never appears during fine-tuning. The mixed strategy (80/10/10) mitigates this by exposing the model to actual tokens in roughly 20% of the selected positions.
 
-**Relationship to Cloze task:** MLM is directly inspired by the Cloze task from psycholinguistics (Taylor, 1953), where subjects fill in blanks in a passage.
+### Whole Word Masking
 
-## Contradictions / Tensions Across Papers
+An improvement (released May 2019) always masks all tokens belonging to the same word at once. For example, if `##son` of `Johanson` is selected, all of `Johan ##son` is masked. This prevents the model from trivially reconstructing masked pieces from visible word fragments.
 
-**From Bommasani et al. (2021):**
-- **MLM is not optimally efficient:** Bommasani et al. note that ELECTRA — a 2020 follow-up model (Clark et al., ICLR 2020; published ~1.5 years after BERT) that trains a discriminator to distinguish real tokens from replaced tokens — achieves **4× the training efficiency** of BERT's MLM on the same data. MLM predicts only 15% of tokens per batch; ELECTRA generates a supervision signal for every token. This directly challenges the BERT paper's framing of MLM as the natural, superior approach to bidirectional pre-training.
-- **MLM as one instance of SSL:** Bommasani et al. position MLM within a broader taxonomy of [[self-supervised-learning]] objectives (autoregressive, span corruption, contrastive, discriminative). The BERT paper does not frame MLM this way; it treats it as a novel task-specific contribution rather than an instance of a general paradigm.
+### Contrast with Autoregressive LM
 
-## Contradictions with "Attention Is All You Need"
-
-The Transformer paper's decoder uses causal masking (preventing leftward information flow) as a design choice for generation. BERT's MLM pre-training shows this is suboptimal for *understanding* tasks: bidirectional context learned through MLM outperforms left-to-right models across every NLU benchmark tested.
+| Property | MLM (BERT) | Autoregressive (GPT) |
+|----------|-----------|---------------------|
+| Context used | Bidirectional (full) | Unidirectional (left only) |
+| Token dependence | All tokens simultaneously | Left-to-right only |
+| Best for | Understanding, classification | Generation |
+| Training signal | Subset of tokens (15%) | All tokens |
 
 ## Related Concepts
 
-- [[bert]]
-- [[next-sentence-prediction]]
-- [[pre-training-fine-tuning]]
-- [[self-attention]]
-- [[wordpiece]]
-- [[self-supervised-learning]]
-- [[foundation-model]]
+- [[bert]] — MLM is BERT's primary pre-training objective
+- [[next-sentence-prediction]] — BERT's second pre-training objective
+- [[self-supervised-learning]] — MLM is a form of self-supervised learning
+- [[autoregressive-language-model]] — The contrasting generation paradigm
+- [[wordpiece]] — Tokenization used before masking is applied
+
+## Sources
+
+- Devlin et al. — "BERT: Pre-training of Deep Bidirectional Transformers" (2018) — bert-overview.txt
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25

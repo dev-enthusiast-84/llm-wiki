@@ -1,41 +1,60 @@
-# Next Sentence Prediction (NSP)
+# Next Sentence Prediction
 
-**Source:** "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" — Devlin et al., 2019
+A binary pre-training task where a model predicts whether two sentences appear consecutively in the original text.
 
 ## Summary
 
-Next Sentence Prediction (NSP) is the second pre-training objective in [[bert]], training the model to predict whether two sentences are consecutive in a document. It was designed to capture inter-sentence understanding not encoded by token-level [[masked-language-model]] training. **Note:** NSP's benefit is contested — RoBERTa (Liu et al., 2019) removed NSP and matched or exceeded BERT's performance, suggesting the gains shown in the BERT paper may be confounded with other training differences (see Contradictions section).
+Next Sentence Prediction (NSP) is the second pre-training objective used in BERT, designed to help the model understand inter-sentence relationships useful for tasks like question answering and natural language inference. Given sentence pairs (A, B), the model predicts "IsNextSentence" or "NotNextSentence." Half the examples use genuine consecutive sentences; half use randomly sampled sentences. Later work found NSP to be largely unnecessary and RoBERTa removed it without performance degradation.
 
 ## Explanation
 
-**Task construction:**  
-For each pre-training example, two text segments A and B are sampled:
-- 50% of the time: B is the actual next sentence following A in the corpus (label: `IsNext`)
-- 50% of the time: B is a random sentence from the corpus (label: `NotNext`)
+### Training Format
 
-The prediction is made using the `[CLS]` token representation. The final model achieves 97–98% accuracy on NSP.
+```
+Sentence A: the man went to the store .
+Sentence B: he bought a gallon of milk .
+Label: IsNextSentence
 
-**Motivation:**  
-Many NLP tasks require understanding relationships *between* sentences — question answering (QA), natural language inference (NLI), paraphrase detection. Standard language modeling objectives do not capture this. NSP provides a direct training signal for cross-sentence coherence.
+Sentence A: the man went to the store .
+Sentence B: penguins are flightless .
+Label: NotNextSentence
+```
 
-**Ablation findings (Table 5):**  
-Removing NSP significantly hurts:
-- QNLI: 88.4 → 84.9
-- SQuAD F1: 88.5 → 87.9
-- MNLI-m: 84.4 → 83.9
+The `[CLS]` token's final representation is used to predict the label. During pre-training, 50% of pairs use the true next sentence and 50% use a random sentence from the corpus.
 
-The degradation is most pronounced on tasks that explicitly require cross-sentence reasoning.
+### Intended Purpose
 
-**Limitation acknowledged:**  
-The `[CLS]` vector is not a meaningful sentence representation *without fine-tuning*, since it was trained specifically for the NSP binary prediction task.
+NSP was introduced to capture cross-sentence semantics that MLM alone cannot provide, since MLM operates on individual segments. BERT's authors believed NSP would improve downstream tasks like:
+- Natural Language Inference (is sentence B entailed by A?)
+- Question Answering (is passage A relevant to question B?)
 
-**Later research (not in this paper):**  
-Subsequent work (RoBERTa, 2019) found that NSP may actually hurt performance and removed it — suggesting the benefit shown here may be partly confounded with BERT's larger batch size and more training data vs the baseline. This is an open question in the literature.
+### Controversy: Is NSP Necessary?
+
+Later research significantly questioned the value of NSP:
+- **RoBERTa** (Liu et al., 2019) showed that removing NSP and training with full-sentence inputs improved downstream performance
+- NSP may be too easy (random sentences are trivially distinguishable by topic)
+- Better cross-sentence tasks like Sentence Order Prediction (SOP, used in ALBERT) proved more effective
 
 ## Related Concepts
 
-- [[bert]]
-- [[masked-language-model]]
-- [[pre-training-fine-tuning]]
-- [[cls-sep-tokens]]
-- [[glue]]
+- [[bert]] — NSP is BERT's second pre-training objective, alongside MLM
+- [[masked-language-model]] — BERT's primary pre-training objective
+- [[cls-sep-tokens]] — The `[CLS]` and `[SEP]` tokens structure sentence pairs for NSP
+- [[pre-training-fine-tuning]] — NSP is part of BERT's pre-training stage
+
+## Contradictions
+
+Different sources evaluate NSP differently:
+- **BERT paper** (Devlin et al., 2019): NSP improves QA and NLI tasks by 3-5 points
+- **RoBERTa** (Liu et al., 2019): removing NSP improves most benchmarks; suggests NSP hurts rather than helps by restricting to shorter sequences
+
+Context: NSP as originally implemented (document-level next sentence) was likely too easy. More carefully designed sentence-relationship tasks (SOP, inter-sentence coherence) may provide the intended benefit.
+
+## Sources
+
+- Devlin et al. — "BERT: Pre-training of Deep Bidirectional Transformers" (2018) — bert-overview.txt
+
+---
+
+**Status**: Complete
+**Last Updated**: 2026-04-25
