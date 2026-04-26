@@ -218,6 +218,62 @@
     .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: .4rem; }
     .feature-card p { font-size: .88rem; color: var(--muted); line-height: 1.6; }
 
+    /* ── Orchestrate banner ── */
+    .orch-banner {
+      background: var(--surface2);
+      border: 1.5px solid rgba(124,106,245,.35);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.75rem;
+      margin-top: 2.5rem;
+      display: flex; gap: 1.5rem; align-items: flex-start;
+      box-shadow: 0 0 32px rgba(124,106,245,.08);
+    }
+    .orch-banner-left { flex-shrink: 0; padding-top: .1rem; }
+    .orch-rec {
+      background: rgba(52,211,153,.1); border: 1px solid rgba(52,211,153,.3);
+      color: var(--green); border-radius: 999px;
+      padding: .18rem .7rem; font-size: .7rem; font-weight: 700;
+      white-space: nowrap;
+    }
+    .orch-banner-cmd {
+      font-family: 'Cascadia Code','Fira Code','Menlo',monospace;
+      font-size: 1rem; font-weight: 700; color: var(--accent2);
+      margin: .5rem 0 .6rem;
+    }
+    .orch-banner-desc { font-size: .88rem; color: var(--muted); line-height: 1.65; }
+    .orch-banner-pills { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .75rem; }
+    .orch-pill {
+      font-size: .75rem; color: var(--muted);
+      background: rgba(255,255,255,.04); border: 1px solid var(--border);
+      border-radius: 4px; padding: .15rem .55rem; font-family: monospace;
+    }
+
+    /* ── Divider label ── */
+    .steps-divider {
+      display: flex; align-items: center; gap: 1rem;
+      margin: 2rem 0 1.5rem; color: var(--muted); font-size: .82rem;
+    }
+    .steps-divider::before, .steps-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ── Reset callout ── */
+    .reset-callout {
+      background: rgba(245,158,11,.06);
+      border: 1px solid rgba(245,158,11,.28);
+      border-left: 3px solid rgb(245,158,11);
+      border-radius: var(--radius);
+      padding: .9rem 1.2rem;
+      font-size: .86rem; color: var(--muted); line-height: 1.65;
+      max-width: 700px; margin-top: .75rem;
+    }
+    .reset-callout strong { color: rgb(245,158,11); }
+    .reset-callout code {
+      background: rgba(255,255,255,.06); border: 1px solid var(--border);
+      border-radius: 4px; padding: .08rem .4rem;
+      font-family: monospace; font-size: .85em; color: var(--accent3);
+    }
+
     /* ── Workflow ── */
     #how-it-works {}
     .workflow {
@@ -442,18 +498,19 @@
       <span class="terminal-title">llm-wiki — zsh</span>
     </div>
     <div class="terminal-body">
-      <div><span class="t-comment"># Drop papers into /raw, then...</span></div>
-      <div><span class="t-prompt">❯ </span><span class="t-cmd">/compile-papers</span></div>
-      <div><span class="t-out">✔ Scanning /raw …  found 5 sources (Attention, BERT, GPT-3, FMs, SLL)</span></div>
-      <div><span class="t-out">✔ Created <span class="t-path">wiki/transformer.md</span> · <span class="t-path">wiki/self-attention.md</span> · 38 more</span></div>
-      <div><span class="t-out">✔ Updated wiki/index.md  — 40 entities indexed</span></div>
+      <div><span class="t-comment"># Option A — one command (recommended)</span></div>
+      <div><span class="t-prompt">❯ </span><span class="t-cmd">/orchestrate-wiki</span></div>
+      <div><span class="t-out">✔ Empty wiki detected — compiling 5 sources (parallel agents) …</span></div>
+      <div><span class="t-out">✔ Created <span class="t-path">wiki/transformer.md</span> · <span class="t-path">wiki/bert.md</span> · 38 more</span></div>
+      <div><span class="t-out">✔ Audit passed · Synced README &amp; GitHub Pages</span></div>
       <br>
-      <div><span class="t-prompt">❯ </span><span class="t-cmd">/sync-wiki</span><span class="t-comment">    # new paper dropped</span></div>
-      <div><span class="t-out">✔ Detected raw/SLL.pdf (new) — extracting concepts …</span></div>
-      <div><span class="t-out">✔ Updated <span class="t-path">wiki/scaling-laws.md</span>  &amp;  3 linked pages</span></div>
+      <div><span class="t-comment"># Option B — step by step</span></div>
+      <div><span class="t-prompt">❯ </span><span class="t-cmd">/compile-papers</span><span class="t-comment">   # first run</span></div>
+      <div><span class="t-prompt">❯ </span><span class="t-cmd">/sync-wiki</span><span class="t-comment">        # after adding a paper</span></div>
+      <div><span class="t-prompt">❯ </span><span class="t-cmd">/audit-wiki</span><span class="t-comment">       # at 20+ pages</span></div>
       <br>
-      <div><span class="t-prompt">❯ </span><span class="t-cmd">/launch-wiki-ui</span></div>
-      <div><span class="t-out">✔ Streamlit running on <span class="t-path">http://localhost:8501</span></span></div>
+      <div><span class="t-comment"># Starting fresh after cloning?</span></div>
+      <div><span class="t-prompt">❯ </span><span class="t-cmd">/reset-wiki reset</span><span class="t-comment">  # wipe example pages first</span></div>
       <div><span class="t-prompt">❯ </span><span class="t-cursor"></span></div>
     </div>
   </div>
@@ -542,14 +599,35 @@
 <section id="how-it-works">
   <div class="container">
     <div class="section-label">How it works</div>
-    <h2 class="section-title">Three commands. One coherent knowledge base.</h2>
-    <p class="section-sub">Drop sources into <code style="font-family:monospace;color:#38bdf8">/raw</code>, then let the AI handle the rest.</p>
+    <h2 class="section-title">Two approaches, one knowledge base.</h2>
+    <p class="section-sub">Drop sources into <code style="font-family:monospace;color:#38bdf8">/raw</code> — then run the full pipeline in one command, or step through it yourself.</p>
 
+    <!-- Approach A: orchestrate-wiki -->
+    <div class="orch-banner reveal">
+      <div class="orch-banner-left">
+        <span class="orch-rec">⚡ Recommended</span>
+        <div class="orch-banner-cmd">/orchestrate-wiki</div>
+      </div>
+      <div>
+        <div class="orch-banner-desc">One command runs the full pipeline. It detects your wiki's current state and does the right thing automatically — no flags, no decisions needed.</div>
+        <div class="orch-banner-pills">
+          <span class="orch-pill">detects empty wiki → compile</span>
+          <span class="orch-pill">detects existing wiki → sync</span>
+          <span class="orch-pill">audits with 4 parallel agents</span>
+          <span class="orch-pill">syncs README &amp; GitHub Pages</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="steps-divider">or run each step individually</div>
+
+    <!-- Approach B: step by step -->
     <div class="workflow reveal">
       <div class="workflow-step">
         <div class="step-num">1</div>
         <h3>Compile</h3>
-        <p>Batch-process all sources from scratch. Extracts every key concept and creates structured entity pages.</p>
+        <p>First run — batch-processes all sources in <code style="font-family:monospace;font-size:.85em;color:#38bdf8">/raw</code>, extracts concepts, and creates structured entity pages.</p>
         <div class="step-cmd">/compile-papers</div>
       </div>
       <div class="workflow-step">
@@ -561,9 +639,16 @@
       <div class="workflow-step">
         <div class="step-num">3</div>
         <h3>Audit</h3>
-        <p>Once you've grown to ~20+ pages, audit checks for quality issues: orphans, broken links, contradictions.</p>
+        <p>Once you've grown to ~20+ pages, audit checks for orphans, broken links, contradictions, and stale claims.</p>
         <div class="step-cmd">/audit-wiki</div>
       </div>
+    </div>
+
+    <!-- Reset callout -->
+    <div class="reset-callout reveal">
+      <strong>⚠ Starting fresh after cloning?</strong> The repo ships with example wiki pages.
+      Run <code>/reset-wiki reset</code> before running the pipeline to wipe them and start with your own papers.
+      Without the <code>reset</code> argument, <code>/reset-wiki</code> only reports state — it never deletes anything.
     </div>
   </div>
 </section>
@@ -802,6 +887,10 @@
           <h3>Clone &amp; configure</h3>
           <p>Clone the repo. For the query UI, have an API key ready from any major LLM provider (Anthropic, OpenAI, Google, Mistral, Cohere, etc.). No other setup required.</p>
           <p style="margin-top:.5rem; font-family:monospace; font-size:.82rem; color:var(--accent3)">git clone https://github.com/dev-enthusiast-84/llm-wiki.git</p>
+          <p style="margin-top:.75rem; font-size:.84rem; color:var(--muted); background:rgba(245,158,11,.06); border:1px solid rgba(245,158,11,.25); border-left:3px solid rgb(245,158,11); border-radius:6px; padding:.6rem .9rem; line-height:1.6">
+            <strong style="color:rgb(245,158,11)">Starting fresh?</strong> The repo includes example wiki pages.
+            Run <code style="font-family:monospace;font-size:.85em;color:var(--accent3);">/reset-wiki reset</code> to wipe them before running the pipeline with your own papers.
+          </p>
         </div>
       </div>
       <div class="gs-step reveal">
@@ -814,8 +903,9 @@
       <div class="gs-step reveal">
         <div class="gs-num">3</div>
         <div>
-          <h3>Run <code>/compile-papers</code></h3>
-          <p>Open Claude Code CLI or GitHub Copilot Chat and run the command. Your wiki populates automatically — structured, linked, and indexed.</p>
+          <h3>Build the wiki</h3>
+          <p><strong style="color:var(--accent2)">Recommended:</strong> run <code>/orchestrate-wiki</code> — detects state, compiles or syncs, audits, and syncs docs in one go.</p>
+          <p style="margin-top:.4rem; color:var(--muted); font-size:.85rem;">Or step by step: <code>/compile-papers</code> first run → <code>/sync-wiki</code> after each new paper → <code>/audit-wiki</code> at 20+ pages.</p>
         </div>
       </div>
       <div class="gs-step reveal">
