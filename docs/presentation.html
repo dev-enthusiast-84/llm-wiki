@@ -443,30 +443,28 @@
     /* ────────────────────────────────────────────────────── */
     /* SLIDE 5 — DEMO / CTA                                   */
     /* ────────────────────────────────────────────────────── */
-    .s5-body { display: flex; gap: 3%; flex: 1; }
+    .s5-body { display: flex; gap: 3%; flex: 1; min-height: 0; }
     .demo-panel {
       flex: 1;
-      background: var(--card);
+      background: #000;
       border-radius: 6px;
       border: 1.5px solid;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 4%;
-      padding: 4%;
+      position: relative;
+      overflow: hidden;
+      min-height: 0;
     }
-    .demo-play {
-      font-size: clamp(1.2rem, 4vw, 3rem);
-      opacity: .7;
+    .demo-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(8,12,28,.82);
+      border-top: 1px solid;
+      padding: 2% 4%;
+      display: flex; align-items: baseline; gap: 4%;
+      font-size: clamp(.38rem, .9vw, .68rem);
+      backdrop-filter: blur(4px);
     }
-    .demo-title {
-      font-size: clamp(.45rem, 1.1vw, .82rem);
-      font-weight: 700;
-      text-align: center;
-    }
-    .demo-sub {
-      font-size: clamp(.33rem, .8vw, .6rem);
+    .demo-sub-inline {
+      font-size: clamp(.3rem, .72vw, .54rem);
       color: var(--dim);
-      text-align: center;
-      line-height: 1.5;
     }
     .s5-cta {
       margin-top: 3%;
@@ -785,15 +783,21 @@
       <div class="slide-title-row">See It In Action</div>
       <div class="hline"></div>
       <div class="s5-body">
-        <div class="demo-panel" style="border-color:var(--orange)">
-          <div class="demo-play">▶</div>
-          <div class="demo-title" style="color:var(--orange)">Terminal Skills Demo</div>
-          <div class="demo-sub">orchestrate-wiki (parallel agents)<br>compile · sync · audit · Copilot</div>
+        <div class="demo-panel" style="border-color:var(--orange);padding:0;overflow:hidden;position:relative">
+          <video src="terminal-demo.mp4" controls preload="metadata"
+                 style="width:100%;height:100%;object-fit:contain;display:block;background:#000"></video>
+          <div class="demo-label" style="border-color:var(--orange)">
+            <span style="color:var(--orange);font-weight:700">Terminal Skills Demo</span>
+            <span class="demo-sub-inline">orchestrate · compile · sync · audit · Copilot</span>
+          </div>
         </div>
-        <div class="demo-panel" style="border-color:var(--cyan)">
-          <div class="demo-play">▶</div>
-          <div class="demo-title" style="color:var(--cyan)">Wiki Query UI Demo</div>
-          <div class="demo-sub">settings · happy-path query<br>empty wiki · not-found error</div>
+        <div class="demo-panel" style="border-color:var(--cyan);padding:0;overflow:hidden;position:relative">
+          <video src="ui-demo.mp4" controls preload="metadata"
+                 style="width:100%;height:100%;object-fit:contain;display:block;background:#000"></video>
+          <div class="demo-label" style="border-color:var(--cyan)">
+            <span style="color:var(--cyan);font-weight:700">Wiki Query UI Demo</span>
+            <span class="demo-sub-inline">settings · query · empty wiki · not-found</span>
+          </div>
         </div>
       </div>
       <div class="s5-cta">
