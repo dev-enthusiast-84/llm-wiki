@@ -97,6 +97,7 @@
     .slide-2 { background: var(--bg); }
     .slide-3 { background: var(--bg); }
     .slide-4 { background: var(--bg); }
+    .slide-5 { background: linear-gradient(135deg, var(--bg) 0%, rgb(5,10,32) 100%); }
 
     /* ── Common slide elements ── */
     .slide-title-row {
@@ -439,6 +440,124 @@
       line-height: 1.4;
     }
 
+    /* ────────────────────────────────────────────────────── */
+    /* SLIDE 5 — DEMO / CTA                                   */
+    /* ────────────────────────────────────────────────────── */
+    .s5-body { display: flex; gap: 3%; flex: 1; min-height: 0; }
+
+    /* Clickable thumbnail card */
+    .demo-thumb {
+      flex: 1; min-height: 0;
+      border-radius: 8px;
+      border: 1.5px solid;
+      background: var(--card);
+      cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 5%;
+      position: relative;
+      overflow: hidden;
+      transition: background .2s, box-shadow .25s;
+    }
+    .demo-thumb:hover { background: var(--panel); }
+    .demo-thumb:hover .play-ring { transform: scale(1.1); }
+
+    /* Subtle grid pattern overlay */
+    .demo-thumb::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+    }
+
+    .play-ring {
+      width: clamp(2.5rem, 8vw, 5rem);
+      height: clamp(2.5rem, 8vw, 5rem);
+      border-radius: 50%;
+      border: 2px solid;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .25s;
+      position: relative; z-index: 1;
+    }
+    .play-icon {
+      font-size: clamp(1rem, 3.5vw, 2.2rem);
+      line-height: 1;
+      margin-left: 8%; /* optical centre for ▶ */
+    }
+    .demo-thumb-title {
+      font-size: clamp(.45rem, 1.2vw, .9rem);
+      font-weight: 800;
+      letter-spacing: .02em;
+      position: relative; z-index: 1;
+    }
+    .demo-thumb-sub {
+      font-size: clamp(.33rem, .8vw, .6rem);
+      color: var(--dim);
+      text-align: center;
+      padding: 0 8%;
+      line-height: 1.5;
+      position: relative; z-index: 1;
+    }
+    .demo-thumb-hint {
+      position: absolute; bottom: 4%; left: 0; right: 0;
+      text-align: center;
+      font-size: clamp(.28rem, .65vw, .5rem);
+      color: var(--dim);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    /* CTA pills row */
+    .s5-cta {
+      margin-top: 3%;
+      display: flex; gap: 2.5%; justify-content: center; flex-wrap: wrap;
+    }
+    .cta-pill {
+      background: transparent;
+      border: 1.5px solid;
+      border-radius: 6px;
+      padding: .4em 1em;
+      font-size: clamp(.38rem, .9vw, .68rem);
+      font-weight: 700;
+      text-decoration: none;
+      transition: opacity .2s;
+      cursor: pointer;
+    }
+    .cta-pill:hover { opacity: .75; }
+
+    /* ── Video modal ── */
+    .video-modal {
+      display: none;
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,.88);
+      backdrop-filter: blur(8px);
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 1rem;
+    }
+    .video-modal.open { display: flex; }
+    .modal-video {
+      width: min(90vw, 160vh);
+      max-height: 85vh;
+      border-radius: 10px;
+      background: #000;
+      outline: none;
+      box-shadow: 0 0 80px rgba(0,0,0,.8);
+    }
+    .modal-close {
+      position: absolute; top: 1.25rem; right: 1.5rem;
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+      color: #fff; border-radius: 6px;
+      width: 36px; height: 36px; font-size: 1.1rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .2s;
+    }
+    .modal-close:hover { background: rgba(255,255,255,.18); }
+    .modal-title {
+      font-size: .9rem; font-weight: 700; color: rgba(255,255,255,.7);
+      letter-spacing: .03em;
+    }
 
     /* ── Navigation bar ── */
     .nav-bar {
@@ -740,21 +859,23 @@
       <div class="slide-title-row">See It In Action</div>
       <div class="hline"></div>
       <div class="s5-body">
-        <div class="demo-panel" style="border-color:var(--orange);padding:0;overflow:hidden;position:relative">
-          <video src="terminal-demo.mp4" controls preload="metadata"
-                 style="width:100%;height:100%;object-fit:contain;display:block;background:#000"></video>
-          <div class="demo-label" style="border-color:var(--orange)">
-            <span style="color:var(--orange);font-weight:700">Terminal Skills Demo</span>
-            <span class="demo-sub-inline">orchestrate · compile · sync · audit · Copilot</span>
+        <div class="demo-thumb" style="border-color:var(--orange)"
+             onclick="openModal('terminal-demo.mp4','Terminal Skills Demo')">
+          <div class="play-ring" style="border-color:var(--orange);box-shadow:0 0 24px rgba(245,158,11,.35)">
+            <span class="play-icon" style="color:var(--orange)">▶</span>
           </div>
+          <div class="demo-thumb-title" style="color:var(--orange)">Terminal Skills Demo</div>
+          <div class="demo-thumb-sub">orchestrate-wiki · compile-papers<br>sync-wiki · audit-wiki · Copilot Chat</div>
+          <div class="demo-thumb-hint">click to play</div>
         </div>
-        <div class="demo-panel" style="border-color:var(--cyan);padding:0;overflow:hidden;position:relative">
-          <video src="ui-demo.mp4" controls preload="metadata"
-                 style="width:100%;height:100%;object-fit:contain;display:block;background:#000"></video>
-          <div class="demo-label" style="border-color:var(--cyan)">
-            <span style="color:var(--cyan);font-weight:700">Wiki Query UI Demo</span>
-            <span class="demo-sub-inline">settings · query · empty wiki · not-found</span>
+        <div class="demo-thumb" style="border-color:var(--cyan)"
+             onclick="openModal('ui-demo.mp4','Wiki Query UI Demo')">
+          <div class="play-ring" style="border-color:var(--cyan);box-shadow:0 0 24px rgba(6,182,212,.35)">
+            <span class="play-icon" style="color:var(--cyan)">▶</span>
           </div>
+          <div class="demo-thumb-title" style="color:var(--cyan)">Wiki Query UI Demo</div>
+          <div class="demo-thumb-sub">settings · happy-path query<br>empty-wiki guard · not-found error</div>
+          <div class="demo-thumb-hint">click to play</div>
         </div>
       </div>
       <div class="s5-cta">
@@ -767,6 +888,13 @@
 
   </div><!-- .deck -->
 </div><!-- .stage -->
+
+<!-- ── Video modal ── -->
+<div class="video-modal" id="video-modal" onclick="closeModal(event)">
+  <button class="modal-close" onclick="closeModal()" title="Close (Esc)">✕</button>
+  <div class="modal-title" id="modal-title"></div>
+  <video class="modal-video" id="modal-video" controls playsinline></video>
+</div>
 
 <!-- ── Slide navigation ── -->
 <div class="nav-bar">
@@ -810,10 +938,30 @@
   dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.i)));
 
   document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (document.getElementById('video-modal').classList.contains('open')) return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); goTo(cur + 1); }
     if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); goTo(cur - 1); }
     if (e.key === 'f' || e.key === 'F') toggleFS();
   });
+
+  // Video modal
+  const modal      = document.getElementById('video-modal');
+  const modalVideo = document.getElementById('modal-video');
+  const modalTitle = document.getElementById('modal-title');
+
+  function openModal(src, title) {
+    modalVideo.src = src;
+    modalTitle.textContent = title;
+    modal.classList.add('open');
+    modalVideo.play();
+  }
+  function closeModal(e) {
+    if (e && e.target !== modal && e.target !== document.querySelector('.modal-close')) return;
+    modal.classList.remove('open');
+    modalVideo.pause();
+    modalVideo.src = '';
+  }
 
   // Fullscreen
   function toggleFS() {
