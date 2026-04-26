@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Wiki — Documentation</title>
+  <meta name="description" content="Full documentation for LLM Wiki — commands, workflows, query UI, and setup guide." />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #18181f;
+      --border: rgba(255,255,255,0.07);
+      --text: #e8e8f0;
+      --muted: #7f7f9a;
+      --accent: #7c6af5;
+      --accent2: #a78bfa;
+      --accent3: #38bdf8;
+      --green: #34d399;
+      --glow: rgba(124, 106, 245, 0.3);
+      --radius: 12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 60px;
+      background: rgba(10,10,15,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: .5rem; font-weight: 700; font-size: 1.1rem; color: var(--text); text-decoration: none; }
+    .nav-logo span { color: var(--accent2); }
+    .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .9rem; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active { color: var(--accent2); }
+    .nav-cta {
+      background: var(--accent); color: #fff; padding: .4rem 1rem;
+      border-radius: 6px; text-decoration: none; font-size: .88rem; font-weight: 600;
+      transition: opacity .2s;
+    }
+    .nav-cta:hover { opacity: .85; }
+
+    /* ── Layout ── */
+    .page-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 100px 2rem 6rem;
+    }
+
+    /* ── Prose styles (applied to rendered markdown) ── */
+    .prose h1 {
+      font-size: 2.2rem; font-weight: 800; letter-spacing: -.03em;
+      line-height: 1.15; margin-bottom: 1rem;
+      background: linear-gradient(135deg, var(--accent2) 0%, var(--accent3) 60%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .prose h2 {
+      font-size: 1.45rem; font-weight: 700; letter-spacing: -.02em;
+      color: var(--accent2); margin-top: 3rem; margin-bottom: .75rem;
+      padding-bottom: .4rem; border-bottom: 1px solid var(--border);
+    }
+    .prose h3 {
+      font-size: 1.1rem; font-weight: 700; color: var(--text);
+      margin-top: 2rem; margin-bottom: .5rem;
+    }
+    .prose h4 {
+      font-size: .95rem; font-weight: 700; color: var(--accent3);
+      margin-top: 1.5rem; margin-bottom: .4rem;
+    }
+    .prose p { margin-bottom: 1rem; color: var(--text); font-size: .97rem; }
+    .prose ul, .prose ol {
+      margin: .5rem 0 1rem 1.5rem; display: flex; flex-direction: column; gap: .35rem;
+    }
+    .prose li { font-size: .95rem; color: var(--text); }
+    .prose li::marker { color: var(--accent2); }
+    .prose strong { color: var(--text); font-weight: 700; }
+    .prose em { color: var(--muted); font-style: italic; }
+    .prose a { color: var(--accent3); text-decoration: none; transition: color .2s; }
+    .prose a:hover { color: var(--accent2); text-decoration: underline; }
+    .prose hr {
+      border: none; border-top: 1px solid var(--border);
+      margin: 2.5rem 0;
+    }
+    .prose blockquote {
+      border-left: 3px solid var(--accent); margin: 1rem 0;
+      padding: .75rem 1.25rem;
+      background: rgba(124,106,245,.07); border-radius: 0 var(--radius) var(--radius) 0;
+      color: var(--muted); font-size: .94rem;
+    }
+    .prose blockquote p { margin-bottom: 0; color: var(--muted); }
+
+    /* inline code */
+    .prose code {
+      background: rgba(255,255,255,.07); border: 1px solid var(--border);
+      border-radius: 4px; padding: .1rem .42rem;
+      font-family: 'Cascadia Code', 'Fira Code', 'Menlo', monospace;
+      font-size: .82em; color: var(--accent3);
+    }
+
+    /* code blocks */
+    .prose pre {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem 1.5rem;
+      overflow-x: auto; margin: 1rem 0 1.5rem;
+    }
+    .prose pre code {
+      background: none; border: none; padding: 0;
+      font-size: .83rem; color: var(--text); line-height: 1.8;
+    }
+
+    /* tables */
+    .prose table {
+      width: 100%; border-collapse: collapse;
+      margin: 1rem 0 1.5rem; font-size: .88rem;
+    }
+    .prose th {
+      background: var(--surface2); color: var(--accent2);
+      font-weight: 700; text-align: left;
+      padding: .65rem 1rem; border: 1px solid var(--border);
+    }
+    .prose td {
+      padding: .55rem 1rem; border: 1px solid var(--border);
+      color: var(--text); vertical-align: top;
+    }
+    .prose tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+
+    /* ── Back-to-top ── */
+    .back-top {
+      position: fixed; bottom: 2rem; right: 2rem;
+      background: var(--accent); color: #fff;
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; text-decoration: none;
+      opacity: 0; transition: opacity .3s;
+      box-shadow: 0 0 16px var(--glow);
+    }
+    .back-top.show { opacity: 1; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: .82rem; color: var(--muted);
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 600px) {
+      nav { padding: 0 1rem; }
+      .nav-links { display: none; }
+      .page-wrap { padding: 80px 1rem 4rem; }
+      .prose h1 { font-size: 1.7rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <a class="nav-logo" href="index.html">📚 <span>LLM</span> Wiki</a>
+  <ul class="nav-links">
+    <li><a href="index.html#features">Features</a></li>
+    <li><a href="index.html#how-it-works">How it works</a></li>
+    <li><a href="index.html#tools">Commands</a></li>
+    <li><a href="index.html#query-ui">Query UI</a></li>
+    <li><a href="readme.html" class="active">Docs</a></li>
+  </ul>
+  <a class="nav-cta" href="https://github.com/dev-enthusiast-84/llm-wiki" target="_blank" rel="noopener">View on GitHub →</a>
+</nav>
+
+<!-- ── Content ── -->
+<div class="page-wrap">
+  <div class="prose" id="readme-content">
+    <!-- README rendered here by JS -->
+  </div>
+</div>
+
+<!-- ── Footer ── -->
+<footer>
+  <p>
+    Built by <a href="https://github.com/dev-enthusiast-84" target="_blank" rel="noopener">Maneetta Antony</a> &nbsp;·&nbsp;
+    <a href="https://github.com/dev-enthusiast-84/llm-wiki/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a> &nbsp;·&nbsp;
+    Inspired by Andrej Karpathy's knowledge-building philosophy
+  </p>
+</footer>
+
+<a class="back-top" href="#" id="back-top" title="Back to top">↑</a>
+
+<script id="readme-md" type="text/markdown">
+# LLM Wiki — Personal Knowledge Base
+
+A structured system for building and maintaining a personal wiki of LLM/AI concepts from research papers. Extract key concepts from sources, create interconnected entity pages, and keep your knowledge base organized and up-to-date.
+
+**[Live docs →](https://dev-enthusiast-84.github.io/llm-wiki/)** · **[GitHub →](https://github.com/dev-enthusiast-84/llm-wiki)**
+
+## Quick Start
+
+1. **Add papers** to the `raw/` folder
+2. **Run compile** to extract concepts and create entity pages
+3. **Add new papers?** Run sync for incremental updates
+4. **Reach 20+ pages?** Run audit for quality checks
+5. **Query the wiki?** Launch the browser UI
+
+> **Choose your tool:**
+>
+> | Step | Claude Code CLI | GitHub Copilot Chat |
+> |------|----------------|---------------------|
+> | Full pipeline | `/orchestrate-wiki` | `Orchestrate Wiki` |
+> | Compile | `/compile-papers` | `Compile Papers to Wiki` |
+> | Sync | `/sync-wiki` | `Sync Wiki from Raw` |
+> | Audit | `/audit-wiki` | `Audit Wiki` |
+> | Reset | `/reset-wiki` | `Reset Wiki` |
+> | Query UI | `/launch-wiki-ui` | `Launch Wiki UI` |
+> | Stop UI | `/stop-wiki-ui` | `Stop Wiki UI` |
+> | Sync docs | `/sync-docs` | `Sync Docs` |
+> | Run maintenance | `/run-maintenance` | `Run Maintenance` |
+> | Regen presentation | `/regenerate-presentation` | `Regenerate Presentation` |
+
+---
+
+## Folder Structure
+
+```
+llm-wiki/
+├── raw/                              # Source materials (papers, articles, docs)
+├── wiki/                             # Your knowledge base
+│   ├── index.md                      # (Auto-generated) Directory of all entities
+│   ├── log.md                        # (Auto-generated) Compilation history
+│   └── <concept>.md                  # Entity pages — one per concept
+├── wiki_query.py                     # Browser UI for querying the wiki with LLMs
+├── tests/                            # Automated tests (63 tests)
+│   ├── conftest.py                   # Streamlit mock, shared fixtures
+│   └── test_wiki_query.py            # Validation, file loading, prompt, API
+├── .github/
+│   └── prompts/                      # GitHub Copilot prompt files (auto-discovered)
+├── skills/                           # Skill assets & references (flat)
+├── .claude/
+│   └── commands/                     # Claude Code slash commands (auto-discovered)
+├── presentation/                     # Slide deck and demo videos
+├── extensions/                       # Browser & tool integrations
+├── copilot-instructions.md           # Copilot workspace configuration
+├── pytest.ini                        # Test runner configuration
+└── .gitignore                        # Excludes .env, secrets, generated binaries
+```
+
+---
+
+## Workflows
+
+### Step 1: Compile Initial Wiki
+
+**Use when:** starting the wiki for the first time, or after a reset.
+
+| Tool | Command | Prerequisite |
+|------|---------|-------------|
+| Claude Code | `/compile-papers` | Files in `raw/`, empty `wiki/` |
+| GitHub Copilot | `Compile Papers to Wiki` | Files in `raw/`, empty `wiki/` |
+
+**What it does:**
+- Reads every supported file in `raw/` (PDF, TXT, HTML, PPTX, DOCX, XLSX)
+- Extracts key concepts, definitions, and relationships
+- Creates `wiki/<concept>.md` for each concept (summary, links, sources)
+- Updates `wiki/index.md` and `wiki/log.md`
+
+**Example flow:**
+```
+raw/transformer-2017.pdf + raw/bert-2019.pdf
+         ↓ compile
+wiki/transformer.md, wiki/self-attention.md, wiki/bert.md, wiki/masked-lm.md
+         ↓
+wiki/index.md ← 4 new entries    wiki/log.md ← 2 new rows
+```
+
+**Results summary (emitted by the skill):**
+```
+✅ Compile Papers — complete  YYYY-MM-DD
+📥 Sources processed: N   📄 Pages created: N   📋 index + log updated
+⚠️  Issues: none / <list>
+```
+
+---
+
+### Step 2: Sync New Sources
+
+**Use when:** new files have been added to `raw/` after the initial compile.
+
+| Tool | Command | Prerequisite |
+|------|---------|-------------|
+| Claude Code | `/sync-wiki` | Existing wiki pages + new files in `raw/` |
+| GitHub Copilot | `Sync Wiki from Raw` | Existing wiki pages + new files in `raw/` |
+
+**What it does:**
+- Compares `raw/` against `wiki/log.md` to find unprocessed sources
+- Updates existing entity pages (new sources, revised explanations, contradiction flags)
+- Creates new entity pages for novel concepts
+- Updates `wiki/index.md` and `wiki/log.md`
+
+**Results summary (emitted by the skill):**
+```
+✅ Sync Wiki — complete  YYYY-MM-DD
+📥 New sources: N   📄 Created: N   📝 Updated: N
+⚠️  Contradictions flagged: N   📋 index + log updated
+```
+
+---
+
+### Step 3: Audit for Quality
+
+**Use when:** wiki reaches ~20–30 pages, after a large sync, or before sharing.
+
+| Tool | Command | Prerequisite |
+|------|---------|-------------|
+| Claude Code | `/audit-wiki` | Existing wiki pages |
+| GitHub Copilot | `Audit Wiki` | Existing wiki pages |
+
+**What it checks:**
+
+| Check | What it finds |
+|-------|--------------|
+| Orphan pages | Entity pages no other page links to |
+| Missing pages | `[[brackets]]` referencing non-existent pages |
+| Contradictions | Conflicting definitions across pages |
+| Stale claims | Information only supported by old sources |
+
+**Results summary (emitted by the skill):**
+```
+✅ Audit Wiki — complete  YYYY-MM-DD
+🔍 Orphans: N   Missing: N   Contradictions: N   Stale: N
+🔧 Auto-fixed: N   📌 Needs review: N (list)
+```
+
+---
+
+### Step 4: Query the Wiki
+
+**Use when:** you want to ask questions about your wiki through a browser interface.
+
+| Tool | Command | Prerequisite |
+|------|---------|-------------|
+| Claude Code | `/launch-wiki-ui` | `wiki_query.py`, Python 3, API key |
+| GitHub Copilot | `Launch Wiki UI` | `wiki_query.py`, Python 3, API key |
+
+**Or launch directly:**
+
+```bash
+pip install streamlit litellm
+streamlit run wiki_query.py
+```
+
+The app opens at **http://localhost:8501**.
+
+**Three-screen flow:**
+
+| Screen | What happens |
+|--------|-------------|
+| **1. Settings** | Enter a model ID and API key — both validated before proceeding |
+| **2. Wiki confirmation** | Review which entity pages are loaded |
+| **3. Chat** | Ask questions — answers grounded strictly in the wiki |
+
+**Supported providers:**
+
+| Provider | Example model IDs |
+|----------|-------------------|
+| Anthropic | `claude-opus-4-7` · `claude-sonnet-4-6` · `claude-haiku-4-5` |
+| OpenAI | `gpt-4o` · `gpt-4o-mini` · `o3` |
+| Google | `gemini/gemini-2.0-flash` · `gemini/gemini-1.5-pro` |
+| Mistral | `mistral/mistral-large-latest` |
+| Cohere | `cohere/command-r-plus` |
+
+---
+
+### Reset (Start Over)
+
+| Tool | Command | Effect |
+|------|---------|--------|
+| Claude Code | `/reset-wiki` | Reports state only — no changes |
+| Claude Code | `/reset-wiki reset` | ⚠️ Wipes all entity pages |
+| GitHub Copilot | `Reset Wiki` | Reports state only — no changes |
+
+⚠️ **Irreversible** — all entity pages are permanently deleted. Commit or back up first.
+
+---
+
+## Entity Pages Format
+
+```markdown
+# Concept Name
+
+One-line definition.
+
+## Summary
+
+2-3 sentence overview of what this is and why it matters.
+
+## Explanation
+
+Detailed breakdown, components, examples, formulas if applicable.
+
+## Related Concepts
+
+- [[concept1]] - How it relates
+- [[concept2]] - Connection or distinction
+
+## Sources
+
+- Author(s) - "Paper Title" (Year) - Section/page reference
+
+## Contradictions
+
+(Optional) Note if different sources define this differently
+
+---
+**Status**: New / Updated   **Last Updated**: YYYY-MM-DD
+```
+
+---
+
+## Available Commands
+
+### Claude Code
+
+**Wiki skills:**
+
+| Command | When to use |
+|---------|-------------|
+| `/orchestrate-wiki` | Full pipeline refresh |
+| `/compile-papers` | Initial setup or batch processing |
+| `/sync-wiki` | Adding new sources incrementally |
+| `/audit-wiki` | Every ~20–30 pages |
+| `/reset-wiki` | Inspect state or wipe and restart |
+| `/launch-wiki-ui` | Query wiki via browser |
+| `/stop-wiki-ui` | Stop the running wiki UI |
+
+**Repo maintenance skills:**
+
+| Command | When to use |
+|---------|-------------|
+| `/sync-docs` | After any skill/command/structure change |
+| `/run-maintenance` | Before commits, monthly health check |
+| `/regenerate-presentation` | After changing generator scripts, skills, or UI |
+
+### GitHub Copilot
+
+Type in Copilot Chat: `Orchestrate Wiki`, `Compile Papers to Wiki`, `Sync Wiki from Raw`, `Audit Wiki`, `Reset Wiki`, `Launch Wiki UI`, `Stop Wiki UI`, `Sync Docs`, `Run Maintenance`, `Regenerate Presentation`.
+
+---
+
+## Testing
+
+```bash
+python3 -m pytest         # run all 63 tests
+python3 -m pytest -v      # verbose output
+```
+
+| Test file | What it covers |
+|-----------|---------------|
+| `test_wiki_query.py` | Input validation (OWASP A03/A07), file loading, system prompt, API query mocking |
+
+---
+
+## Troubleshooting
+
+**Q: I added a paper to `/raw` but nothing changed**
+A: Run `/sync-wiki` — the skill compares `raw/` against `wiki/log.md` to find unprocessed files.
+
+**Q: The wiki query UI says "No information found"**
+A: The wiki either is empty or doesn't cover the topic. Add relevant source files to `raw/` and run `/sync-wiki`.
+
+**Q: How do I fix a broken `[[bracket]]` link?**
+A: Run `/audit-wiki` — it finds all missing pages and either creates stubs or lists them for manual creation.
+
+**Q: Documentation is out of sync after I added a skill**
+A: Run `/sync-docs` — it detects changed skill files and updates `README.md` and `copilot-instructions.md` automatically.
+
+---
+
+## Resources
+
+**Skill assets & references:**
+- Entity template: `skills/wiki-compilation/assets/entity-template.md`
+- Format guide: `skills/wiki-compilation/references/wiki-format.md`
+- Update checklist: `skills/wiki-sync/references/update-checklist.md`
+- Audit checklist: `skills/wiki-audit/references/audit-checklist.md`
+
+---
+
+*Inspired by [Andrej Karpathy's LLM Wiki concept](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)*
+
+**Created**: 2026-04-19 · **Commands**: 10 · **Tests**: 63
+</script>
+
+<script>
+  // Render embedded markdown
+  const mdEl = document.getElementById('readme-md');
+  const md = mdEl.textContent;
+  marked.setOptions({ gfm: true, breaks: false });
+  document.getElementById('readme-content').innerHTML = marked.parse(md);
+
+  // Back-to-top button
+  const btn = document.getElementById('back-top');
+  window.addEventListener('scroll', () => {
+    btn.classList.toggle('show', window.scrollY > 400);
+  });
+</script>
+</body>
+</html>
