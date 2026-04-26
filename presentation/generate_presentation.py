@@ -203,6 +203,10 @@ def slide_title(prs: Presentation):
         Inches(0.75), Inches(4.72), Inches(8.5), Inches(0.4),
         size=13, color=C.DIM)
 
+    txt(sl, "github.com/dev-enthusiast-84/llm-wiki",
+        Inches(0.75), Inches(5.22), Inches(8.5), Inches(0.38),
+        size=12, color=C.CYAN)
+
     # Right — Three-layer architecture diagram
     dx = Inches(9.35)
     rect(sl, dx - Inches(0.2), Inches(1.1), Inches(3.85), Inches(5.95), C.PANEL)
@@ -606,6 +610,11 @@ def slide_demo(prs: Presentation,
     txt(sl, "settings  ·  happy-path query  ·  empty wiki  ·  not-found error",
         Inches(6.95), vid_y + vid_h + Inches(0.46), vid_w, Inches(0.3),
         size=11, color=C.DIM, align=PP_ALIGN.CENTER)
+
+    # References footer
+    txt(sl, "github.com/dev-enthusiast-84/llm-wiki",
+        Inches(0.55), Inches(6.58), Inches(12.25), Inches(0.32),
+        size=11, color=C.CYAN, align=PP_ALIGN.CENTER)
 
     notes(sl, """SPEAKER NOTES — SLIDE 5: DEMO
 
