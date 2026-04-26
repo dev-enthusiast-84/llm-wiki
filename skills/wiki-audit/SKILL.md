@@ -17,44 +17,31 @@ Comprehensive quality check of the wiki structure and content. Run this maintena
 
 ## Procedure
 
-### 1. Identify Orphan Pages
+### 1. Build Link Graph
 
-Pages that no other page links to:
-- Scan all files in `wiki/` for `[[references]]`
-- Find pages with zero inbound links
-- Check if orphan is truly standalone or should be linked
+List every `.md` file in `wiki/` except `index.md` and `log.md`. For each page collect:
+- All `[[bracket]]` outbound links
+- All source citations (paper title + year) from `## Sources`
 
-### 2. Find Missing Pages
+This produces the entity list and link map needed by the parallel agents.
 
-Concepts referenced but without their own page:
-- Search for `[[concept]]` patterns across all pages
-- Extract all referenced concepts
-- Compare against existing filenames
-- Create list of missing pages to add
+### 2. Spawn Parallel Audit Agents
 
-### 3. Detect Contradictions
+Call the Agent tool four times in a **single response** — all four run simultaneously.
 
-Claims that conflict across pages:
-- Compare definitions of the same concept across multiple pages
-- Look for conflicting explanations or different approaches
-- Check Sources sections for conflicting papers
-- Review any explicit "Contradictions" sections
+**Agent 1 — Orphan Check** (`subagent_type: "Explore"`): Read all wiki entity pages. Identify pages with zero inbound `[[bracket]]` references from other pages. For each orphan, suggest the 1–2 most related pages that should add a backlink.
 
-### 4. Flag Stale Claims
+**Agent 2 — Missing Pages** (`subagent_type: "Explore"`): Read all wiki entity pages. Collect every `[[concept]]` bracket reference. Compare referenced concepts against existing `.md` filenames. List every missing concept, grouped by how many pages reference it (most-referenced first).
 
-Outdated information that may be superseded:
-- Cross-reference claims with dates in `/raw` folder
-- Identify papers that update or contradict earlier sources
-- Check if Source citations are from older papers
-- Note if multiple versions of a concept exist (old vs. new understanding)
+**Agent 3 — Contradictions** (`subagent_type: "Explore"`): Read all wiki entity pages. For concepts appearing in multiple pages, compare definitions and core claims. Identify conflicting statements or incompatible claims. Return: which pages conflict, what the conflicting claims are, which sources support each.
 
-### 5. Suggest and Apply Fixes
+**Agent 4 — Stale Claims** (`subagent_type: "Explore"`): Read all wiki entity pages and `wiki/log.md`. For each page, check the publication years of cited sources. Cross-reference against newer sources in `wiki/log.md`. Flag pages whose core claims rely solely on older sources when newer papers already exist.
 
-For each issue found:
-- **Orphans**: Add backlinks from related pages or remove if truly irrelevant
-- **Missing pages**: Create new files or update references to clarify
-- **Contradictions**: Add "Contradictions" section noting differences and citing sources
-- **Stale claims**: Update with newer information, add note about evolution of understanding
+### 3. Apply Fixes
+
+Wait for all four agents to complete, then:
+- **Apply confidently**: add backlinks for orphans, create stub pages for top-priority missing concepts, update `wiki/index.md`
+- **Flag for review**: contradictions and stale claims requiring subject-matter judgment
 
 See [Audit Checklist](./references/audit-checklist.md) for detailed verification steps.
 

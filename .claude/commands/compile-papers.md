@@ -43,18 +43,28 @@ List all files in `raw/`. Classify each by extension:
 
 Announce the list of files found and their formats before reading any of them.
 
-## Step 2: Read each source
+## Step 2: Spawn Parallel Extraction Agents
 
-Process files one at a time using the method from the table above.  
-For PDFs longer than 20 pages, read in chunks (pages 1–20, 21–40, …) and consolidate understanding before extracting.
+For each supported source file from Step 1, call the Agent tool once — send **all file agents in a single response** so they run in parallel. Do not process files sequentially.
 
-## Step 3: Extract key concepts
+Use `subagent_type: "Explore"` for each agent. Tailor the prompt to the file's format:
 
-Across all sources:
-- Identify primary concepts and terminology
-- Note definitions, formulations, and explanations
-- Record relationships between concepts
-- Flag conflicting definitions between sources
+- **PDF**: "Read `raw/<filename>` using the Read tool. For PDFs longer than 20 pages, read in page-range chunks (pages 1–20, 21–40, …) until complete. Extract all key concepts: for each, return its name, a 2–3 sentence plain-language definition, related concepts mentioned, and any conflicting definitions across sections."
+- **TXT / HTML**: "Read `raw/<filename>` using the Read tool (strip HTML tags with Python if the output is noisy). Extract all key concepts as above."
+- **PPTX**: "Run `python3 -c \"from pptx import Presentation; prs=Presentation('raw/<filename>'); [print(s.text_frame.text) for slide in prs.slides for s in slide.shapes if s.has_text_frame]\"`. Extract all key concepts from the text output."
+- **DOCX**: "Run `python3 -c \"import docx; doc=docx.Document('raw/<filename>'); print('\\n'.join(p.text for p in doc.paragraphs if p.text.strip()))\"`. Extract all key concepts from the output."
+- **XLSX**: "Run `python3 -c \"import openpyxl; wb=openpyxl.load_workbook('raw/<filename>',read_only=True,data_only=True); [print(ws.title,[[str(c.value) for c in r] for r in ws.iter_rows()]) for ws in wb.worksheets]\"`. Extract all key concepts from the cell data."
+
+Each agent should return a structured list: concept name, definition, related concepts, source file.
+
+If only one source file exists, you may read it directly rather than spawning a sub-agent.
+
+## Step 3: Collect Extraction Results
+
+Wait for all extraction agents to complete. Consolidate their concept lists:
+- Merge definitions for concepts that appear in multiple sources
+- Flag conflicting definitions between sources (record both)
+- Identify cross-source concept relationships
 
 ## Step 4: Create entity pages
 

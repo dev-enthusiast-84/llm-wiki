@@ -3,39 +3,29 @@ mode: agent
 description: Audit entire wiki for quality issues. Check for orphan pages, missing linked concepts, contradictions, and stale claims. Run when wiki reaches ~20 pages.
 ---
 
-Audit the entire `wiki/` folder. Identify and fix:
+Audit the entire `wiki/` folder using parallel agents.
 
-1. **Orphan pages** — pages that no other page links to
-   - Are they truly standalone, or should they be linked?
-   - Suggest backlinks from related pages
+## Step 1: Build Link Graph
 
-2. **Missing pages** — concepts referenced with `[[brackets]]` that don't have their own page
-   - Find all `[[concept]]` references across pages
-   - List concepts that need new pages
-   - Suggest which to prioritize
+List every `.md` file in `wiki/` except `index.md` and `log.md`. Collect all `[[bracket]]` outbound links and source citations per page.
 
-3. **Contradictions** — claims that conflict across pages
-   - Compare definitions of same concepts in different pages
-   - Check if different sources define things differently
-   - Document conflicts in "Contradictions" sections
+## Step 2: Spawn Parallel Audit Agents
 
-4. **Stale claims** — things that may have been superseded by newer sources in `/raw`
-   - Check publication dates of sources
-   - Cross-reference against newer papers
-   - Flag outdated understanding
+Call the Agent tool four times in a **single response** — all four run simultaneously.
 
-## Output
+**Agent 1 — Orphan Check** (`subagent_type: "Explore"`): Read all wiki entity pages. Find pages with zero inbound `[[bracket]]` references. For each orphan, suggest the 1–2 most related pages that should link to it.
 
-Generate a comprehensive report showing:
-- Count of each issue type
-- Specific pages and locations affected
-- Recommended fixes
+**Agent 2 — Missing Pages** (`subagent_type: "Explore"`): Read all wiki entity pages. Collect every `[[concept]]` reference. Compare against existing filenames. List missing concepts sorted by how many pages reference them (most-referenced first).
 
-Apply fixes where confident; flag uncertain ones for review.
+**Agent 3 — Contradictions** (`subagent_type: "Explore"`): Read all wiki entity pages. For concepts in multiple pages, identify conflicting definitions or incompatible claims. Return: which pages conflict, the conflicting claims, and which sources support each.
 
-Use the [Audit Checklist](../../skills/wiki-audit/references/audit-checklist.md) and [Report Template](../../skills/wiki-audit/assets/audit-report.md) for guidance.
+**Agent 4 — Stale Claims** (`subagent_type: "Explore"`): Read all wiki entity pages and `wiki/log.md`. Flag pages whose core claims rely solely on older sources when newer papers already exist in the wiki.
 
-**Recommended**: Run this every ~20-30 new pages or monthly.
+## Step 3: Apply Fixes
+
+Wait for all four agents, then apply confident fixes (backlinks, stub pages, index updates) and flag uncertain issues (contradictions, stale claims) for manual review.
+
+Use the [Audit Checklist](../../skills/wiki-audit/references/audit-checklist.md) and [Report Template](../../skills/wiki-audit/assets/audit-report.md).
 
 ## Output
 

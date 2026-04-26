@@ -3,7 +3,8 @@ LLM Wiki Demo Video Generator
 Generates terminal-demo.mp4 and ui-demo.mp4.
 
 terminal-demo.mp4:
-  · Claude Code CLI: /compile-papers, /sync-wiki, /audit-wiki
+  · Claude Code CLI: /orchestrate-wiki, /compile-papers, /sync-wiki, /audit-wiki
+  · Parallel agents: extraction (one per source file), audit (4 simultaneous checks)
   · GitHub Copilot Chat equivalent workflow
 
 ui-demo.mp4:
@@ -203,13 +204,39 @@ def _scene_startup() -> ImageClip:
     return _term_clip(lines, duration=2.5)
 
 
+def _scene_orchestrate() -> ImageClip:
+    lines = [
+        [],
+        [("  > ", T.PURPLE), ("/orchestrate-wiki", T.ORANGE)],
+        [],
+        [("  ● ", T.CYAN), ("Phase 1 — Detecting wiki state...", T.WHITE)],
+        [("     ", T.DIM), ("0 entity pages found — empty wiki → running compile phase", T.DIM)],
+        [],
+        [("  ● ", T.CYAN), ("Phase 2 — Spawning ", T.WHITE), ("9 parallel extraction agents", T.GREEN), ("...", T.WHITE)],
+        [("     ✓ ", T.GREEN), ("Agent 1: Attention.pdf      Agent 2: FMs.pdf       Agent 3: gpt3.pdf", T.DIM)],
+        [("     ✓ ", T.GREEN), ("Agent 4: SLL.pdf            Agent 5: bert-overview.txt", T.DIM)],
+        [("     ✓ ", T.GREEN), ("Agent 6: rlhf-overview.docx Agent 7: transformer.html  Agent 8: RNN.pptx", T.DIM)],
+        [("     ⊘ ", T.DIM), ("Agent 9: llm-spreadsheet.xlsx  (benchmark data — no entities)", T.DIM)],
+        [],
+        [("  ● ", T.CYAN), ("Phase 3 — Spawning ", T.WHITE), ("4 parallel audit agents", T.GREEN), ("...", T.WHITE)],
+        [("     ✓ ", T.GREEN), ("Orphan check  ·  Missing pages  ·  Contradictions  ·  Stale claims", T.DIM)],
+        [],
+        [("  ✓  Orchestrate Wiki", T.GREEN), (" — complete  ", T.WHITE), ("2026-04-25", T.DIM)],
+        [],
+        [("  ● ", T.CYAN), ("Phase 2: compiled 9 files, 37 pages created", T.WHITE)],
+        [("  ● ", T.CYAN), ("Phase 3: 0 orphans, 0 missing, 0 contradictions, 0 stale", T.WHITE)],
+        [("  ● ", T.CYAN), ("Phase 4: README + docs/index.html + copilot-instructions updated", T.WHITE)],
+    ]
+    return _term_clip(lines, duration=7.0)
+
+
 def _scene_compile() -> ImageClip:
     lines = [
         _PROMPT() + [("claude", T.WHITE)],
         [],
         [("  > ", T.PURPLE), ("/compile-papers", T.ORANGE)],
         [],
-        [("  ● ", T.CYAN), ("Reading 9 sources and extracting concepts...", T.WHITE)],
+        [("  ● ", T.CYAN), ("Spawning ", T.WHITE), ("9 parallel extraction agents", T.GREEN), ("...", T.WHITE)],
         [],
         [("  ✓  Compile Papers", T.GREEN), (" — complete  ", T.WHITE), ("2026-04-25", T.DIM)],
         [],
@@ -262,7 +289,9 @@ def _scene_audit() -> ImageClip:
         [],
         [("  > ", T.PURPLE), ("/audit-wiki", T.ORANGE)],
         [],
-        [("  ● ", T.CYAN), ("Auditing 37 wiki pages...", T.WHITE)],
+        [("  ● ", T.CYAN), ("Spawning ", T.WHITE), ("4 parallel audit agents", T.GREEN), ("...", T.WHITE)],
+        [("     ✓ ", T.GREEN), ("Agent 1: orphan check  ·  Agent 2: missing pages", T.DIM)],
+        [("     ✓ ", T.GREEN), ("Agent 3: contradictions  ·  Agent 4: stale claims", T.DIM)],
         [],
         [("  ✓  Audit Wiki", T.GREEN), (" — complete  ", T.WHITE), ("2026-04-25", T.DIM)],
         [],
@@ -674,6 +703,11 @@ def generate_terminal_demo(output: Path = TERM_OUT) -> Path:
         _title_card("Terminal Skills Demo",
                     "Claude Code CLI  ·  GitHub Copilot", T.ORANGE),
         _scene_startup(),
+        _title_card("/orchestrate-wiki",
+                    "Full pipeline — parallel agents for compile, audit, sync-docs", T.GREEN, duration=1.8),
+        _scene_orchestrate(),
+        _title_card("/compile-papers  ·  /sync-wiki  ·  /audit-wiki",
+                    "Individual skills — use when you want targeted control", T.ORANGE, duration=1.8),
         _scene_compile(),
         _scene_sync(),
         _scene_audit(),

@@ -13,19 +13,21 @@ If all files are already logged: report **"Wiki is up to date — no new sources
 
 If new files exist: announce them before processing.
 
-## Step 2: Read each new source
+## Step 2: Read New Sources
 
-Process new files one at a time:
+**Single new file**: read it directly using the appropriate format method (Read tool for PDF/TXT/HTML; bash command for PPTX/DOCX/XLSX), then proceed to Step 3.
 
-| Format | Read method | Limitations |
-|--------|-------------|-------------|
-| `.pdf` | Read tool (native) | Images/diagrams not extracted; PDFs >20 pages require reading in page-range chunks |
-| `.txt` | Read tool (native) | None |
-| `.html` | Read tool, then strip tags with Python if output is noisy | Inline JS/CSS may add noise; complex layouts may lose structure |
-| `.pptx` | Extract text via python-pptx bash command | Only text extracted; charts, images, diagrams, and speaker notes are lost |
-| `.docx` | Extract text via python-docx bash command | Tables, images, headers/footers, and text boxes not extracted |
-| `.xlsx` | Extract cell values via openpyxl bash command | Only cell values extracted; formulas shown as last-computed result; charts, images, and formatting lost |
-| other | **Skip** — report filename and extension as unsupported |
+**Two or more new files**: call the Agent tool once per file in a **single response** so all reads run in parallel. Use `subagent_type: "Explore"` for each. Each agent prompt names its file, specifies the read method, and returns: concepts introduced, existing wiki pages to update, proposed updates, and proposed new pages. Collect all agent results before proceeding.
+
+| Format | Read method |
+|--------|-------------|
+| `.pdf` | Read tool — for >20 pages read in chunks (1–20, 21–40, …) |
+| `.txt` | Read tool |
+| `.html` | Read tool, strip tags with Python if noisy |
+| `.pptx` | python-pptx bash command |
+| `.docx` | python-docx bash command |
+| `.xlsx` | openpyxl bash command |
+| other | **Skip** — report as unsupported |
 
 ## Step 3: Update existing entity pages
 

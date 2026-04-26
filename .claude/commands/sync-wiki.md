@@ -25,19 +25,23 @@ If all files are already logged: report **"Wiki is up to date — no new sources
 
 If new files exist: announce them before processing.
 
-## Step 2: Read each new source
+## Step 2: Read New Sources
 
-Process new files one at a time using the appropriate method:
+**Single new file**: read it directly using the format table below, then proceed to Step 3.
 
-| Format | Read method | Limitations |
-|--------|-------------|-------------|
-| `.pdf` | `Read` tool (native) | Images/diagrams not extracted; PDFs >20 pages require reading in page-range chunks |
-| `.txt` | `Read` tool (native) | None |
-| `.html` | `Read` tool, then strip tags with Python if output is noisy | Inline JS/CSS may add noise; complex layouts may lose structure |
-| `.pptx` | `python3 -c "from pptx import Presentation; prs=Presentation('raw/FILE.pptx'); [print(s.text_frame.text) for slide in prs.slides for s in slide.shapes if s.has_text_frame]"` | Only text extracted; charts, images, diagrams, and speaker notes are lost |
-| `.docx` | `python3 -c "import docx; doc=docx.Document('raw/FILE.docx'); print('\n'.join(p.text for p in doc.paragraphs if p.text.strip()))"` | Tables, images, headers/footers, text boxes not extracted |
-| `.xlsx` | `python3 -c "import openpyxl; wb=openpyxl.load_workbook('raw/FILE.xlsx',read_only=True,data_only=True); [print(ws.title,[[str(c.value) for c in r] for r in ws.iter_rows()]) for ws in wb.worksheets]"` | Only cell values; formulas shown as last result; charts and images lost |
-| other | **Skip** — report filename and extension as unsupported |
+**Two or more new files**: call the Agent tool once per file in a **single response** so all reads run in parallel. Use `subagent_type: "Explore"` for each. Each agent prompt should name the specific file, specify the read method for its format, and return: concepts introduced, existing wiki pages that need updating, proposed updates to those pages, and proposed new pages. Collect all agent results before proceeding to Step 3.
+
+Format read methods:
+
+| Format | Read method |
+|--------|-------------|
+| `.pdf` | `Read` tool — for PDFs >20 pages read in page-range chunks (1–20, 21–40, …) |
+| `.txt` | `Read` tool |
+| `.html` | `Read` tool, strip tags with Python if noisy |
+| `.pptx` | `python3 -c "from pptx import Presentation; prs=Presentation('raw/FILE.pptx'); [print(s.text_frame.text) for slide in prs.slides for s in slide.shapes if s.has_text_frame]"` |
+| `.docx` | `python3 -c "import docx; doc=docx.Document('raw/FILE.docx'); print('\n'.join(p.text for p in doc.paragraphs if p.text.strip()))"` |
+| `.xlsx` | `python3 -c "import openpyxl; wb=openpyxl.load_workbook('raw/FILE.xlsx',read_only=True,data_only=True); [print(ws.title,[[str(c.value) for c in r] for r in ws.iter_rows()]) for ws in wb.worksheets]"` |
+| other | **Skip** — report as unsupported |
 
 ## Step 3: Update existing entity pages
 

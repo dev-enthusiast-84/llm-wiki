@@ -12,47 +12,35 @@ description: Audit entire wiki for quality issues. Check for orphan pages, missi
 
 ---
 
-## Step 1: Scan all entity pages
+## Step 1: Build Link Graph
 
-List every `.md` file in `wiki/` except `index.md` and `log.md`.  
-Build an index of:
-- All `[[bracket]]` outbound links per page
-- All pages that link to each page (inbound links)
-- All source citations and their publication years
+List every `.md` file in `wiki/` except `index.md` and `log.md`. For each page collect:
+- All `[[bracket]]` outbound links
+- All source citations (paper title + year) from the `## Sources` section
 
-## Step 2: Orphan pages
+This produces the complete entity list and link graph needed by the parallel agents below.
 
-Pages that **no other page links to**:
-- List them by filename
-- Determine whether they are genuinely standalone or should be linked
-- Suggest specific backlinks from the most related pages
+## Step 2: Spawn Parallel Audit Agents
 
-## Step 3: Missing pages
+Call the Agent tool four times in a **single response** — all four run simultaneously.
 
-Concepts referenced with `[[brackets]]` that **have no corresponding file**:
-- Find all `[[concept]]` references across every page
-- List concepts where `wiki/<concept>.md` does not exist
-- Prioritize by number of pages that reference the missing concept
-- Create stub pages for the top-priority missing concepts
+**Agent 1 — Orphan Check**
+`subagent_type: "Explore"` — prompt: "Read all `.md` files in `wiki/` (exclude `index.md` and `log.md`). For each page scan every `[[bracket]]` reference made by other pages. Identify pages that appear in zero inbound references — these are orphans. For each orphan suggest the 1–2 most related pages that should add a backlink to it. Return a list of orphan filenames and suggested backlink sources."
 
-## Step 4: Contradictions
+**Agent 2 — Missing Pages**
+`subagent_type: "Explore"` — prompt: "Read all `.md` files in `wiki/` (exclude `index.md` and `log.md`). Collect every `[[concept]]` bracket reference found across all pages. Compare each referenced concept against the list of existing `.md` filenames in `wiki/`. Identify every concept that is referenced but has no corresponding file. Group results by how many pages reference each missing concept (most-referenced first). Return the list."
 
-Claims that **conflict across pages**:
-- Compare definitions of the same concept in different pages
-- Note when different sources define things differently
-- Add or update the `## Contradictions` section in affected pages
+**Agent 3 — Contradictions**
+`subagent_type: "Explore"` — prompt: "Read all `.md` files in `wiki/` (exclude `index.md` and `log.md`). For concepts that appear in multiple pages compare their definitions and core claims. Identify conflicting statements: different definitions of the same term, incompatible claims, or disagreements between cited sources. For each contradiction return: which pages conflict, what the conflicting claims are, and which sources support each."
 
-## Step 5: Stale claims
+**Agent 4 — Stale Claims**
+`subagent_type: "Explore"` — prompt: "Read all `.md` files in `wiki/` (exclude `index.md` and `log.md`) and `wiki/log.md`. For each entity page check the publication years of sources listed in its `## Sources` section. Cross-reference against newer sources recorded in `wiki/log.md`. Flag pages whose core claims rely solely on older sources when newer papers already exist in the wiki. Return a prioritised list of pages that need updating."
 
-Information that **may have been superseded**:
-- Check publication dates of sources in `## Sources` sections
-- Cross-reference against newer papers already in `wiki/log.md`
-- Flag pages whose core claim relies only on older sources when newer ones exist
+## Step 3: Apply Fixes
 
-## Step 6: Apply fixes
-
-- **Apply confidently** where the fix is clear (add backlink, create a stub page, update a source reference)
-- **Flag for review** where the fix requires subject-matter judgment (contradictions, stale claims)
+Wait for all four agents to complete, then:
+- **Apply confidently**: add backlinks for orphans, create stub pages for the top-priority missing concepts, update `wiki/index.md`
+- **Flag for review**: contradictions and stale claims where subject-matter judgment is required
 
 Use the [Audit Checklist](../skills/wiki-audit/references/audit-checklist.md) and [Report Template](../skills/wiki-audit/assets/audit-report.md) for guidance.
 

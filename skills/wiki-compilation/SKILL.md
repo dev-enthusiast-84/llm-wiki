@@ -36,17 +36,26 @@ List entity pages in `wiki/` (exclude `index.md`, `log.md`). If any exist, stop 
 
 List all files in `raw/`. Group by supported vs unsupported extension. Announce the list before reading.
 
-### 3. Read Each Source
+### 3. Spawn Parallel Extraction Agents
 
-Process files one at a time. For PDFs >20 pages, read in page-range chunks and combine understanding before extracting concepts.
+For each supported source file, call the Agent tool once — send **all file agents in a single response** so they run in parallel. Do not process files sequentially.
 
-### 4. Extract Key Concepts
+Use `subagent_type: "Explore"` for each agent. Each agent receives a prompt that:
+- Names the specific file to read (`raw/<filename>`)
+- Specifies the read method for its format (Read tool for PDF/TXT/HTML; bash command for PPTX/DOCX/XLSX)
+- Requests extraction of: primary concepts, definitions, relationships between concepts, and conflicting definitions
+- Returns results as a structured list: concept name, 2–3 sentence definition, related concepts, source file
 
-For each paper source:
-- Identify primary concepts and terminology
-- Note definitions and explanations
-- Record relationships to other concepts
-- Flag conflicting definitions or approaches across sources
+For PDFs >20 pages, instruct the agent to read in page-range chunks (1–20, 21–40, …).
+
+If only one source file exists, read it directly without spawning a sub-agent.
+
+### 4. Collect and Merge Concept Results
+
+Wait for all extraction agents to complete. Consolidate their concept lists:
+- Merge definitions for concepts that appear in multiple sources
+- Flag conflicting definitions between sources (record both versions)
+- Identify cross-source relationships
 
 ### 5. Create Entity Pages
 

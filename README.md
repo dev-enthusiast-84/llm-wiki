@@ -16,6 +16,7 @@ A structured system for building and maintaining a personal wiki of LLM/AI conce
 >
 > | Step | Claude Code CLI | GitHub Copilot Chat |
 > |------|----------------|---------------------|
+> | Full pipeline | `/orchestrate-wiki` | `Orchestrate Wiki` |
 > | Compile | `/compile-papers` | `Compile Papers to Wiki` |
 > | Sync | `/sync-wiki` | `Sync Wiki from Raw` |
 > | Audit | `/audit-wiki` | `Audit Wiki` |
@@ -43,6 +44,7 @@ llm-wiki/
 │   └── test_wiki_query.py            # Validation, file loading, prompt, API
 ├── .github/
 │   └── prompts/                      # GitHub Copilot prompt files (auto-discovered)
+│       ├── orchestrate-wiki.prompt.md        # Copilot: Orchestrate Wiki
 │       ├── compile-papers.prompt.md          # Copilot: Compile Papers to Wiki
 │       ├── sync-wiki.prompt.md               # Copilot: Sync Wiki from Raw
 │       ├── audit-wiki.prompt.md              # Copilot: Audit Wiki
@@ -53,6 +55,7 @@ llm-wiki/
 │       ├── run-maintenance.prompt.md         # Copilot: Run Maintenance
 │       └── regenerate-presentation.prompt.md # Copilot: Regenerate Presentation
 ├── skills/                           # Skill assets & references (flat)
+│   ├── orchestrate-wiki/             # Full pipeline orchestration skill
 │   ├── wiki-compilation/             # Compile skill assets & references
 │   ├── wiki-sync/                    # Sync skill assets & references
 │   ├── wiki-audit/                   # Audit skill assets & references
@@ -61,6 +64,7 @@ llm-wiki/
 │   └── repo-maintenance/             # Repo maintenance skill assets
 ├── .claude/
 │   └── commands/                     # Claude Code slash commands (auto-discovered)
+│       ├── orchestrate-wiki.md            # Claude: /orchestrate-wiki
 │       ├── compile-papers.md              # Claude: /compile-papers
 │       ├── sync-wiki.md                   # Claude: /sync-wiki
 │       ├── audit-wiki.md                  # Claude: /audit-wiki
@@ -325,6 +329,7 @@ Type `/` in Claude Code CLI:
 
 | Command | When to use | Results summary emitted |
 |---------|-------------|------------------------|
+| `/orchestrate-wiki` | Full pipeline refresh — compile or sync + audit + sync-docs in one command | Phase-by-phase report: sources, audit findings, doc surfaces updated |
 | `/compile-papers` | Initial setup or batch processing | Sources processed, pages created, index/log updated |
 | `/sync-wiki` | Adding new sources incrementally | Sources synced, pages created/updated, contradictions |
 | `/audit-wiki` | Every ~20–30 pages | Findings by category, auto-fixes, manual review list |
@@ -347,6 +352,7 @@ Type in Copilot Chat:
 
 | Command | When to use | Results summary emitted |
 |---------|-------------|------------------------|
+| `Orchestrate Wiki` | Full pipeline refresh — compile or sync + audit + sync-docs in one command | Phase-by-phase report: sources, audit findings, doc surfaces updated |
 | `Compile Papers to Wiki` | Initial setup or batch processing | Sources processed, pages created, index/log updated |
 | `Sync Wiki from Raw` | Adding new sources incrementally | Sources synced, pages created/updated, contradictions |
 | `Audit Wiki` | Every ~20–30 pages | Findings by category, auto-fixes, manual review list |
@@ -367,7 +373,7 @@ Type in Copilot Chat:
 ## Testing
 
 ```bash
-python3 -m pytest         # run all 60 tests
+python3 -m pytest         # run all 63 tests
 python3 -m pytest -v      # verbose output
 python3 -m pytest tests/test_wiki_query.py   # single file
 ```
@@ -568,4 +574,4 @@ python generate_presentation.py    # rebuild PPTX with videos re-embedded
 
 ---
 
-**Created**: 2026-04-19 · **Commands**: 9 (compile, sync, audit, reset, launch-ui, stop-ui, sync-docs, run-maintenance, regenerate-presentation) · **Tests**: 63
+**Created**: 2026-04-19 · **Commands**: 10 (orchestrate, compile, sync, audit, reset, launch-ui, stop-ui, sync-docs, run-maintenance, regenerate-presentation) · **Tests**: 63

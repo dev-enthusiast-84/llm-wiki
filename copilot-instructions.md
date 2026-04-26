@@ -5,7 +5,7 @@ description: "LLM Wiki compilation and sync commands. Available prompts for mana
 
 # LLM Wiki Commands
 
-This workspace includes nine prompts for managing wiki content and keeping documentation in sync.
+This workspace includes ten prompts for managing wiki content and keeping documentation in sync.
 
 ## Supported Source Formats
 
@@ -22,6 +22,16 @@ Drop files into `/raw/` — skills will scan and process them automatically.
 | `.ppt`, other | ❌ Unsupported | Will be skipped with a warning |
 
 ## Available Prompts
+
+### `Orchestrate Wiki`
+Full pipeline in one command — detects wiki state and runs compile or sync, then audit, then sync-docs.
+- Detects whether wiki is empty (compile path) or has content (sync path)
+- Spawns parallel extraction agents (one per source file) for compile and sync phases
+- Runs four parallel audit agents: orphan check, missing pages, contradictions, stale claims
+- Updates all doc surfaces (README, GitHub Pages, copilot-instructions) after wiki changes
+- Emits a phase-by-phase summary report with manual review items
+
+**Use when**: Adding multiple papers to `/raw`, or as a periodic full wiki refresh
 
 ### `Reset Wiki`
 Prepare the wiki before any other operation.
@@ -83,6 +93,8 @@ Stop the running wiki query UI.
 ```
 Drop files into /raw/
     │
+    ├─ Want full refresh? ───→ Orchestrate Wiki  (all-in-one pipeline)
+    │
     ├─ Wiki empty? ──────────→ Reset Wiki → Compile Papers to Wiki
     │
     └─ Wiki has content? ───→ Sync Wiki from Raw
@@ -92,6 +104,7 @@ Drop files into /raw/
 
 | Situation | Start with |
 |---|---|
+| Full pipeline refresh | `Orchestrate Wiki` |
 | First time, fresh wiki | `Reset Wiki` then `Compile Papers to Wiki` |
 | Added new file to `/raw` | `Sync Wiki from Raw` |
 | Wiki feels messy/stale | `Reset Wiki reset` then `Compile Papers to Wiki` |
@@ -103,6 +116,7 @@ Prompts live in `.github/prompts/` and are available in GitHub Copilot and VS Co
 
 | Prompt file | Claude equivalent |
 |---|---|
+| `.github/prompts/orchestrate-wiki.prompt.md` | `/orchestrate-wiki` |
 | `.github/prompts/reset-wiki.prompt.md` | `/reset-wiki` |
 | `.github/prompts/compile-papers.prompt.md` | `/compile-papers` |
 | `.github/prompts/sync-wiki.prompt.md` | `/sync-wiki` |

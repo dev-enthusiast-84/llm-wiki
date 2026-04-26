@@ -31,17 +31,22 @@ List all files in `raw/`. Classify each by extension:
 
 Announce the list of files found and their formats before reading any of them.
 
-## Step 2: Read each source
+## Step 2: Spawn Parallel Extraction Agents
 
-Process files one at a time using the method from the table above. For PDFs longer than 20 pages, read in chunks (pages 1-20, 21-40, etc.).
+For each supported source file from Step 1, call the Agent tool once — send **all agents in a single response** so they run in parallel. Use `subagent_type: "Explore"` for each.
 
-## Step 3: Extract key concepts
+Each agent prompt should name the specific file, specify its read method (Read tool for PDF/TXT/HTML; bash command for PPTX/DOCX/XLSX), and request extraction of: primary concepts, definitions, relationships between concepts, and any conflicting definitions. Each agent returns a structured list: concept name, 2–3 sentence definition, related concepts, source file.
 
-Across all sources:
-- Identify primary concepts and terminology
-- Note definitions, formulations, and explanations
-- Record relationships between concepts
-- Flag conflicting definitions between sources
+For PDFs >20 pages, instruct the agent to read in page-range chunks (1–20, 21–40, …).
+
+If only one source file exists, read it directly without spawning a sub-agent.
+
+## Step 3: Collect Extraction Results
+
+Wait for all agents to complete. Consolidate concept lists:
+- Merge definitions for concepts appearing in multiple sources
+- Flag conflicting definitions (record both)
+- Identify cross-source relationships
 
 ## Step 4: Create entity pages
 

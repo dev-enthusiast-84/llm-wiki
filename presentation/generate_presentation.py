@@ -60,6 +60,12 @@ class C:
     PURPLE    = (139,  92, 246)
     RED       = (239,  68,  68)
 
+    # AA-adjusted text colors for use on CARD background (22,36,72)
+    # C.BLUE   on CARD = 4.14:1 (fail) → BLUE_AA = 6.06:1 (pass)
+    # C.PURPLE on CARD = 3.59:1 (fail) → PURP_AA = 5.32:1 (pass)
+    BLUE_AA   = (100, 165, 255)
+    PURP_AA   = (170, 130, 255)
+
 
 # ── Primitive helpers ──────────────────────────────────────────────────────────
 
@@ -146,6 +152,27 @@ def pill(slide, label, x, y, w=Inches(1.8), text_color=C.CYAN, font_size=12):
         size=font_size, color=text_color, align=PP_ALIGN.CENTER)
 
 
+def hyperlink_pill(slide, label, url, x, y, w=Inches(1.8),
+                   text_color=C.CYAN, font_size=14):
+    """Styled pill button with a clickable, underlined hyperlink.
+    14pt bold = WCAG 'large text' — 3:1 contrast required, all palette colors pass."""
+    bg = tuple(max(0, min(255, int(c * 0.20))) for c in text_color)
+    rrect(slide, x, y, w, Inches(0.46), bg, border=text_color, bw=1.5)
+    tb = slide.shapes.add_textbox(x, y + Inches(0.08), w, Inches(0.30))
+    tf = tb.text_frame
+    tf.word_wrap = False
+    p = tf.paragraphs[0]
+    p.alignment = PP_ALIGN.CENTER
+    run = p.add_run()
+    run.text = label
+    run.font.size = Pt(font_size)
+    run.font.bold = True
+    run.font.underline = True        # AA: links distinguishable without colour alone
+    run.font.color.rgb = RGBColor(*text_color)
+    run.font.name = "Calibri"
+    run.hyperlink.address = url
+
+
 def vbar(slide, x, y, h, color=C.BLUE):
     rect(slide, x, y, Inches(0.055), h, color)
 
@@ -174,7 +201,7 @@ def video_or_placeholder(slide, video_path, x, y, w, h, label, color):
     txt(slide, label, x, y + int(h * 0.65), w, Inches(0.4),
         size=15, bold=True, color=C.LIGHT, align=PP_ALIGN.CENTER)
     txt(slide, "[ click to play embedded video ]", x, y + int(h * 0.8), w, Inches(0.32),
-        size=11, color=C.DIM, align=PP_ALIGN.CENTER)
+        size=11, color=C.LIGHT, align=PP_ALIGN.CENTER)  # DIM→LIGHT: 3.90→10.15:1 on CARD
 
 
 # ── Slide 1: Title ─────────────────────────────────────────────────────────────
@@ -203,32 +230,31 @@ def slide_title(prs: Presentation):
         Inches(0.75), Inches(4.72), Inches(8.5), Inches(0.4),
         size=13, color=C.DIM)
 
-    txt(sl, "github.com/dev-enthusiast-84/llm-wiki",
-        Inches(0.75), Inches(5.22), Inches(8.5), Inches(0.38),
-        size=12, color=C.CYAN)
-
     # Right — Three-layer architecture diagram
     dx = Inches(9.35)
     rect(sl, dx - Inches(0.2), Inches(1.1), Inches(3.85), Inches(5.95), C.PANEL)
     txt(sl, "ARCHITECTURE", dx, Inches(1.22), Inches(3.45), Inches(0.38),
-        size=11, bold=True, color=C.DIM, align=PP_ALIGN.CENTER)
+        size=11, bold=True, color=C.LIGHT, align=PP_ALIGN.CENTER)  # C.DIM→LIGHT: 4.39→11.41:1
 
     layers = [
-        ("RAW SOURCES",     "Papers · HTML · PPTX · DOCX · XLSX",  C.ORANGE),
-        ("WIKI LAYER",      "Entity pages · [[links]] · Citations", C.BLUE),
-        ("SCHEMA / CONFIG", "CLAUDE.md · Conventions · Workflows",  C.PURPLE),
+        # (label, desc, accent_color, text_color_on_card)
+        # accent_color used for border/bar (non-text, 3:1 sufficient)
+        # text_color_on_card must pass 4.5:1 on CARD (22,36,72) for 13pt bold
+        ("RAW SOURCES",     "Papers · HTML · PPTX · DOCX · XLSX",  C.ORANGE, C.ORANGE),
+        ("WIKI LAYER",      "Entity pages · [[links]] · Citations", C.BLUE,   C.BLUE_AA),
+        ("SCHEMA / CONFIG", "CLAUDE.md · Conventions · Workflows",  C.PURPLE, C.PURP_AA),
     ]
     ly = Inches(1.7)
-    for i, (label, desc, color) in enumerate(layers):
-        rrect(sl, dx, ly, Inches(3.45), Inches(1.25), C.CARD, border=color, bw=1.2)
-        rect(sl, dx, ly, Inches(0.055), Inches(1.25), color)
+    for i, (label, desc, accent, text_color) in enumerate(layers):
+        rrect(sl, dx, ly, Inches(3.45), Inches(1.25), C.CARD, border=accent, bw=1.2)
+        rect(sl, dx, ly, Inches(0.055), Inches(1.25), accent)
         txt(sl, label, dx + Inches(0.12), ly + Inches(0.1), Inches(3.2), Inches(0.42),
-            size=13, bold=True, color=color)
+            size=13, bold=True, color=text_color)
         txt(sl, desc, dx + Inches(0.12), ly + Inches(0.58), Inches(3.2), Inches(0.5),
-            size=11, color=C.LIGHT)
+            size=12, color=C.LIGHT)
         if i < 2:
             txt(sl, "↓", dx + Inches(1.6), ly + Inches(1.25), Inches(0.26), Inches(0.38),
-                size=15, color=C.DIM, align=PP_ALIGN.CENTER)
+                size=15, color=C.LIGHT, align=PP_ALIGN.CENTER)  # DIM→LIGHT: 4.39→11.41:1 on PANEL
         ly += Inches(1.65)
 
     notes(sl, """SPEAKER NOTES — SLIDE 1: TITLE
@@ -425,111 +451,121 @@ def slide_implementation(prs: Presentation):
         size=34, bold=True, color=C.WHITE)
     hline(sl, Inches(0.55), Inches(1.28), Inches(12.25))
 
+    # AA-safe variants (defined in class C) for text on CARD background
+    _BLUE_AA = C.BLUE_AA
+    _PURP_AA = C.PURP_AA
+
     cl, cr, cw = Inches(0.55), Inches(7.0), Inches(5.72)
     col_top, col_h = Inches(1.5), Inches(4.45)   # col bottom = 5.95"
-    row_sp, cmd_h  = Inches(0.37), Inches(0.34)
+    # Layout constants — both columns use the same cmd_w/desc geometry so
+    # the longest command (/regenerate-presentation, 24 mono chars) fits on one line.
+    # desc_w is sized so no description exceeds 35 chars at 11pt (one line, no clipping).
+    row_sp  = Inches(0.34)   # row pitch: 7 wiki + divider + 3 maint fits in col_h=4.45"
+    cmd_h   = Inches(0.30)   # single-line text box height for 11pt text
+    cmd_w   = Inches(2.30)   # fits "/regenerate-presentation" (24 mono chars) @ 11pt
+    desc_off = Inches(2.55)  # desc_x = col_x + desc_off  (0.10" gap after cmd_w)
+    desc_w  = Inches(3.0)    # ≤ 35 chars @ 11pt prop fits on one line without wrapping
 
     # ── Claude Code CLI ────────────────────────────────────────────────────
     rrect(sl, cl, col_top, cw, col_h, C.CARD, border=C.ORANGE, bw=1.5)
     rect(sl, cl, col_top, cw, Inches(0.07), C.ORANGE)
     txt(sl, "CLAUDE CODE CLI", cl, col_top + Inches(0.07), cw, Inches(0.36),
-        size=12, bold=True, color=C.ORANGE, align=PP_ALIGN.CENTER)
+        size=13, bold=True, color=C.ORANGE, align=PP_ALIGN.CENTER)
 
-    # Wiki Skills section
     txt(sl, "WIKI SKILLS", cl + Inches(0.15), col_top + Inches(0.48),
-        Inches(2.0), Inches(0.20), size=9, bold=True, color=C.ORANGE)
+        Inches(2.0), Inches(0.22), size=11, bold=True, color=C.ORANGE)
 
     wiki_claude = [
-        ("/compile-papers",  "Extract concepts from all /raw sources"),
-        ("/sync-wiki",       "Incremental update from new sources"),
-        ("/audit-wiki",      "Quality check — orphans, contradictions"),
-        ("/reset-wiki",      "Wipe wiki for a fresh start"),
-        ("/launch-wiki-ui",  "Start Streamlit query interface"),
-        ("/stop-wiki-ui",    "Stop the running Streamlit app"),
+        ("/orchestrate-wiki", "Full pipeline — parallel agents"),     # 31 chars
+        ("/compile-papers",   "Extract concepts from /raw"),           # 26 chars
+        ("/sync-wiki",        "Incremental update from /raw"),         # 28 chars
+        ("/audit-wiki",       "Quality check — parallel agents"),      # 31 chars
+        ("/reset-wiki",       "Wipe wiki for a fresh start"),          # 27 chars
+        ("/launch-wiki-ui",   "Start Streamlit query interface"),      # 31 chars
+        ("/stop-wiki-ui",     "Stop the running Streamlit app"),       # 30 chars
     ]
     cy = col_top + Inches(0.69)
     for cmd, desc in wiki_claude:
-        txt(sl, cmd,  cl + Inches(0.15), cy, Inches(2.1),  cmd_h,
-            size=10, bold=True, color=C.ORANGE, font="Courier New")
-        txt(sl, desc, cl + Inches(2.38), cy, Inches(3.22), cmd_h,
-            size=10, color=C.LIGHT)
+        txt(sl, cmd,  cl + Inches(0.15), cy, cmd_w,   cmd_h,
+            size=11, bold=True, color=C.ORANGE, font="Courier New")
+        txt(sl, desc, cl + desc_off,     cy, desc_w,  cmd_h,
+            size=11, color=C.LIGHT)
         cy += row_sp
 
-    # Repo Maintenance section
     cy += Inches(0.04)
     hline(sl, cl + Inches(0.15), cy, cw - Inches(0.3))
     cy += Inches(0.08)
     txt(sl, "REPO MAINTENANCE", cl + Inches(0.15), cy,
-        Inches(2.2), Inches(0.20), size=9, bold=True, color=C.PURPLE)
+        Inches(2.2), Inches(0.22), size=11, bold=True, color=_PURP_AA)
     cy += Inches(0.22)
 
     maint_claude = [
-        ("/sync-docs",               "Sync README, GitHub Pages, sub-READMEs"),
-        ("/run-maintenance",         "Run tests, verify skills, git health"),
-        ("/regenerate-presentation", "Rebuild demo videos and PPTX deck"),
+        ("/sync-docs",               "Sync README, GitHub Pages, sub-docs"),  # 35 chars
+        ("/run-maintenance",         "Tests, skill check, git health"),        # 30 chars
+        ("/regenerate-presentation", "Rebuild demo videos and PPTX deck"),     # 33 chars
     ]
     for cmd, desc in maint_claude:
-        txt(sl, cmd,  cl + Inches(0.15), cy, Inches(2.1),  cmd_h,
-            size=10, bold=True, color=C.PURPLE, font="Courier New")
-        txt(sl, desc, cl + Inches(2.38), cy, Inches(3.22), cmd_h,
-            size=10, color=C.LIGHT)
+        txt(sl, cmd,  cl + Inches(0.15), cy, cmd_w,   cmd_h,
+            size=11, bold=True, color=_PURP_AA, font="Courier New")
+        txt(sl, desc, cl + desc_off,     cy, desc_w,  cmd_h,
+            size=11, color=C.LIGHT)
         cy += row_sp
 
     # ── GitHub Copilot Chat ────────────────────────────────────────────────
     rrect(sl, cr, col_top, cw, col_h, C.CARD, border=C.BLUE, bw=1.5)
     rect(sl, cr, col_top, cw, Inches(0.07), C.BLUE)
     txt(sl, "GITHUB COPILOT CHAT", cr, col_top + Inches(0.07), cw, Inches(0.36),
-        size=12, bold=True, color=C.BLUE, align=PP_ALIGN.CENTER)
+        size=13, bold=True, color=_BLUE_AA, align=PP_ALIGN.CENTER)
 
     txt(sl, "WIKI SKILLS", cr + Inches(0.15), col_top + Inches(0.48),
-        Inches(2.0), Inches(0.20), size=9, bold=True, color=C.BLUE)
+        Inches(2.0), Inches(0.22), size=11, bold=True, color=_BLUE_AA)
 
     wiki_copilot = [
-        ("Compile Papers to Wiki", "Extract from all /raw sources"),
-        ("Sync Wiki from Raw",     "Incremental update from new sources"),
-        ("Audit Wiki",             "Quality check — orphans, contradictions"),
-        ("Reset Wiki",             "Wipe wiki for a fresh start"),
-        ("Launch Wiki UI",         "Start Streamlit query interface"),
-        ("Stop Wiki UI",           "Stop the running Streamlit app"),
+        ("Orchestrate Wiki",       "Full pipeline — parallel agents"),     # 31 chars
+        ("Compile Papers to Wiki", "Extract from all /raw sources"),       # 29 chars
+        ("Sync Wiki from Raw",     "Incremental update from /raw"),        # 28 chars
+        ("Audit Wiki",             "Quality check — parallel agents"),     # 31 chars
+        ("Reset Wiki",             "Wipe wiki for a fresh start"),         # 27 chars
+        ("Launch Wiki UI",         "Start Streamlit query interface"),     # 31 chars
+        ("Stop Wiki UI",           "Stop the running Streamlit app"),      # 30 chars
     ]
     cy = col_top + Inches(0.69)
     for cmd, desc in wiki_copilot:
-        txt(sl, cmd,  cr + Inches(0.15), cy, Inches(2.3),  cmd_h,
-            size=10, bold=True, color=C.BLUE, font="Courier New")
-        txt(sl, desc, cr + Inches(2.58), cy, Inches(3.02), cmd_h,
-            size=10, color=C.LIGHT)
+        txt(sl, cmd,  cr + Inches(0.15), cy, cmd_w,   cmd_h,
+            size=11, bold=True, color=_BLUE_AA, font="Courier New")
+        txt(sl, desc, cr + desc_off,     cy, desc_w,  cmd_h,
+            size=11, color=C.LIGHT)
         cy += row_sp
 
     cy += Inches(0.04)
     hline(sl, cr + Inches(0.15), cy, cw - Inches(0.3))
     cy += Inches(0.08)
     txt(sl, "REPO MAINTENANCE", cr + Inches(0.15), cy,
-        Inches(2.2), Inches(0.20), size=9, bold=True, color=C.PURPLE)
+        Inches(2.2), Inches(0.22), size=11, bold=True, color=_PURP_AA)
     cy += Inches(0.22)
 
     maint_copilot = [
-        ("Sync Docs",               "Sync README and documentation"),
-        ("Run Maintenance",         "Run tests, verify skills, git health"),
-        ("Regenerate Presentation", "Rebuild demo videos and PPTX deck"),
+        ("Sync Docs",               "Sync README and documentation"),         # 29 chars
+        ("Run Maintenance",         "Tests, skill check, git health"),         # 30 chars
+        ("Regenerate Presentation", "Rebuild demo videos and PPTX deck"),      # 33 chars
     ]
     for cmd, desc in maint_copilot:
-        txt(sl, cmd,  cr + Inches(0.15), cy, Inches(2.3),  cmd_h,
-            size=10, bold=True, color=C.PURPLE, font="Courier New")
-        txt(sl, desc, cr + Inches(2.58), cy, Inches(3.02), cmd_h,
-            size=10, color=C.LIGHT)
+        txt(sl, cmd,  cr + Inches(0.15), cy, cmd_w,   cmd_h,
+            size=11, bold=True, color=_PURP_AA, font="Courier New")
+        txt(sl, desc, cr + desc_off,     cy, desc_w,  cmd_h,
+            size=11, color=C.LIGHT)
         cy += row_sp
 
-    # ── Streamlit Query UI band  (y=6.05–7.13", bottom margin 0.37") ──────
+    # ── Streamlit Query UI band (y=6.05–7.13", bottom margin 0.37") ───────
     band_y, band_h = Inches(6.05), Inches(1.08)
     rrect(sl, cl, band_y, Inches(12.25), band_h, C.CARD, border=C.CYAN, bw=1.2)
     rect(sl, cl, band_y, Inches(0.07), band_h, C.CYAN)
 
     txt(sl, "STREAMLIT QUERY UI", cl + Inches(0.2), band_y + Inches(0.10),
-        Inches(2.6), Inches(0.38), size=12, bold=True, color=C.CYAN)
-    txt(sl, "Multi-provider · Grounded", cl + Inches(0.2), band_y + Inches(0.55),
-        Inches(2.6), Inches(0.28), size=9, color=C.DIM)
+        Inches(2.6), Inches(0.38), size=13, bold=True, color=C.CYAN)
+    txt(sl, "Multi-provider · Grounded", cl + Inches(0.2), band_y + Inches(0.56),
+        Inches(2.6), Inches(0.28), size=10, color=C.LIGHT)   # DIM→LIGHT: 10.14:1
 
-    # 4 feature items — each 2.3" wide, 2.35" apart; last right edge = 12.75" ✓
     feat_items = [
         ("Multi-provider Q&A",        "Anthropic · OpenAI · Google · Mistral · Cohere"),
         ("Wiki-grounded answers",      "No hallucination outside wiki content"),
@@ -539,30 +575,33 @@ def slide_implementation(prs: Presentation):
     fx = Inches(3.4)
     for title, sub in feat_items:
         txt(sl, "· " + title, fx, band_y + Inches(0.10), Inches(2.3), Inches(0.36),
-            size=11, bold=True, color=C.LIGHT)
-        txt(sl, sub, fx, band_y + Inches(0.55), Inches(2.3), Inches(0.28),
-            size=9, color=C.DIM)
+            size=12, bold=True, color=C.LIGHT)
+        txt(sl, sub, fx, band_y + Inches(0.56), Inches(2.3), Inches(0.28),
+            size=11, color=C.LIGHT)                           # 9pt DIM→11pt LIGHT: 10.14:1
         fx += Inches(2.35)
 
     notes(sl, """SPEAKER NOTES — SLIDE 4: IMPLEMENTATION
 
 The system works with both Claude Code CLI and GitHub Copilot Chat.
+All skills now use parallel agents internally for significant speed gains.
 
 WIKI SKILLS (orange = Claude / blue = Copilot) — the core wiki workflow:
-• compile-papers — reads everything in /raw and creates wiki pages from scratch
-• sync-wiki — use when you add new papers; detects what's new, updates without clobbering
-• audit-wiki — run every ~20 pages to catch orphans, missing links, contradictions
+• orchestrate-wiki — NEW: one command runs the full pipeline; detects wiki state, spawns parallel
+  extraction agents (one per source file), runs 4 parallel audit agents, then syncs all docs
+• compile-papers — reads all of /raw using parallel agents (one per file); creates wiki pages
+• sync-wiki — detects new files; spawns parallel agents when multiple new sources exist
+• audit-wiki — runs 4 parallel agents: orphan check, missing pages, contradictions, stale claims
 • reset-wiki — wipe wiki for a fresh start with new topic area
 • launch-wiki-ui — starts the Streamlit web app locally
 • stop-wiki-ui — stops the running Streamlit process
 
 REPO MAINTENANCE (purple, both tools) — separate from wiki operations:
 • sync-docs — keeps README, GitHub Pages, and copilot-instructions in sync after code changes
-• run-maintenance — full health check: runs tests, verifies skill registration, checks wiki + git state
+• run-maintenance — spawns 4 parallel agents: tests, skill registration, wiki health, git status
 • regenerate-presentation — rebuilds demo videos and this deck; detects changed scripts via git
 
 GitHub Copilot Chat equivalents (same skill files, natural language — no slash prefix):
-• Compile Papers to Wiki, Sync Wiki from Raw, Audit Wiki, Reset Wiki, Launch Wiki UI, Stop Wiki UI
+• Orchestrate Wiki, Compile Papers to Wiki, Sync Wiki from Raw, Audit Wiki, Reset Wiki, Launch Wiki UI, Stop Wiki UI
 • Sync Docs, Run Maintenance, Regenerate Presentation
 
 The Streamlit Query UI is a multi-provider web app:
@@ -597,7 +636,7 @@ def slide_demo(prs: Presentation,
     txt(sl, "Terminal Skills Demo",
         Inches(0.55), vid_y + vid_h + Inches(0.1), vid_w, Inches(0.36),
         size=13, bold=True, color=C.ORANGE, align=PP_ALIGN.CENTER)
-    txt(sl, "compile-papers  ·  sync-wiki  ·  audit-wiki  ·  Copilot (compile + launch-ui)",
+    txt(sl, "orchestrate-wiki (parallel agents)  ·  compile  ·  sync  ·  audit  ·  Copilot",
         Inches(0.55), vid_y + vid_h + Inches(0.46), vid_w, Inches(0.3),
         size=11, color=C.DIM, align=PP_ALIGN.CENTER)
 
@@ -611,10 +650,21 @@ def slide_demo(prs: Presentation,
         Inches(6.95), vid_y + vid_h + Inches(0.46), vid_w, Inches(0.3),
         size=11, color=C.DIM, align=PP_ALIGN.CENTER)
 
-    # References footer
-    txt(sl, "github.com/dev-enthusiast-84/llm-wiki",
-        Inches(0.55), Inches(6.58), Inches(12.25), Inches(0.32),
-        size=11, color=C.CYAN, align=PP_ALIGN.CENTER)
+    # References footer — four centred hyperlink pills
+    # widths: 2.18 + 1.58 + 1.58 + 1.90, gaps 0.22 each
+    # total: 2.18 + 0.22 + 1.58 + 0.22 + 1.58 + 0.22 + 1.90 = 7.90"  →  start = (13.33 - 7.90) / 2 = 2.72"
+    hyperlink_pill(sl, "↗  Karpathy's Gist",
+                   "https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f",
+                   Inches(2.72), Inches(6.55), w=Inches(2.18), text_color=C.PURPLE)
+    hyperlink_pill(sl, "↗  Git Repo",
+                   "https://github.com/dev-enthusiast-84/llm-wiki",
+                   Inches(5.12), Inches(6.55), w=Inches(1.58), text_color=C.CYAN)
+    hyperlink_pill(sl, "↗  Live Page",
+                   "https://dev-enthusiast-84.github.io/llm-wiki/",
+                   Inches(6.92), Inches(6.55), w=Inches(1.58), text_color=C.GREEN)
+    hyperlink_pill(sl, "↗  LinkedIn Post",
+                   "https://www.linkedin.com/posts/maneetta-antony_llm-wiki-share-7452168182221623296-acGl?utm_source=share&utm_medium=member_desktop&rcm=ACoAAAMKjaMBgVWqnGQ7U4godYqOh1rcqonVh74",
+                   Inches(8.72), Inches(6.55), w=Inches(1.90), text_color=C.BLUE_AA)
 
     notes(sl, """SPEAKER NOTES — SLIDE 5: DEMO
 
@@ -647,6 +697,32 @@ Timing: ~2 minutes + demo playback.""")
 
 # ── Build PPTX ─────────────────────────────────────────────────────────────────
 
+def validate_layout(prs: Presentation) -> bool:
+    """Check every shape stays within slide bounds. Returns True if clean."""
+    sw, sh = prs.slide_width, prs.slide_height
+    issues = []
+    for i, slide in enumerate(prs.slides, 1):
+        for shape in slide.shapes:
+            l, t, w, h = shape.left, shape.top, shape.width, shape.height
+            if None in (l, t, w, h):
+                continue
+            if l + w > sw:
+                issues.append(f"Slide {i} '{shape.name}': right={(l+w)/914400:.3f}\" overflows slide_W={sw/914400:.3f}\"")
+            if t + h > sh:
+                issues.append(f"Slide {i} '{shape.name}': bottom={(t+h)/914400:.3f}\" overflows slide_H={sh/914400:.3f}\"")
+            if l < 0:
+                issues.append(f"Slide {i} '{shape.name}': left={l/914400:.3f}\" is off-canvas")
+            if t < 0:
+                issues.append(f"Slide {i} '{shape.name}': top={t/914400:.3f}\" is off-canvas")
+    if issues:
+        print(f"\n  ⚠  Layout issues ({len(issues)}):")
+        for issue in issues:
+            print(f"     {issue}")
+    else:
+        print("  ✓ Layout validation passed — all shapes within slide bounds")
+    return len(issues) == 0
+
+
 def build_pptx(
     output: Path = PPTX_OUT,
     terminal_video: Path | None = TERMINAL_VID,
@@ -663,6 +739,7 @@ def build_pptx(
     slide_implementation(prs)
     slide_demo(prs, terminal_video, ui_video)
 
+    validate_layout(prs)
     prs.save(str(output))
     print(f"✓ PPTX  → {output}")
     return output

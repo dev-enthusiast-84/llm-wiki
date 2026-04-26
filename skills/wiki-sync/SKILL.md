@@ -34,11 +34,11 @@ List all files in `raw/` with supported extensions. Cross-reference against the 
 
 If nothing is new: report "Wiki is up to date." and stop.
 
-### 2. Read New Source
+### 2. Read New Sources
 
-- Identify the new source file in `/raw` and read it using the appropriate method
-- For PDFs >20 pages, read in page-range chunks
-- Note the filename — it becomes the log entry identifier
+**Single new file**: read it directly using the format table above, then proceed to Step 3.
+
+**Two or more new files**: call the Agent tool once per file in a **single response** so all reads run in parallel. Use `subagent_type: "Explore"` for each agent. Each agent prompt should name its specific file, specify the read method for its format, and return: concepts introduced, existing wiki pages that need updating, proposed page updates, and proposed new pages. Collect all agent results before proceeding to Step 3.
 
 ### 3. Update Existing Entity Pages
 

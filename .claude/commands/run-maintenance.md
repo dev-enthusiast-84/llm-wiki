@@ -12,72 +12,31 @@ description: Run all pytest tests, verify every skill is registered in both Clau
 
 ---
 
-## Step 1: Run Pytest Suite
+## Step 1: Spawn Parallel Health-Check Agents
 
-```bash
-pytest --tb=short -v 2>&1
-```
+Call the Agent tool four times in a **single response** — send all four calls together without waiting for any to complete first.
 
-Record from the output:
-- Total tests discovered
-- Passed / Failed / Error / Skipped counts
-- Full name + short traceback for every failure or error
+**Agent 1 — Tests**
+`subagent_type: "Explore"` — prompt: "Run `pytest --tb=short -v 2>&1` in the repo root (try `python3 -m pytest --tb=short -v 2>&1` if pytest is not found). Return: total tests discovered, passed count, failed count, error count, skipped count, and the full name plus short traceback for every failure or error."
 
-If pytest is not found, try `python3 -m pytest --tb=short -v 2>&1`.
+**Agent 2 — Skill Registration**
+`subagent_type: "Explore"` — prompt: "Check that each file below exists and has valid frontmatter. Claude commands (`.claude/commands/*.md`) must have a `description:` field. Copilot prompts (`.github/prompts/*.prompt.md`) must have `mode: agent`. Files to verify: `.claude/commands/compile-papers.md`, `.claude/commands/sync-wiki.md`, `.claude/commands/audit-wiki.md`, `.claude/commands/reset-wiki.md`, `.claude/commands/launch-wiki-ui.md`, `.claude/commands/sync-docs.md`, `.claude/commands/run-maintenance.md`, `.claude/commands/regenerate-presentation.md`, `.claude/commands/orchestrate-wiki.md`, `.github/prompts/compile-papers.prompt.md`, `.github/prompts/sync-wiki.prompt.md`, `.github/prompts/audit-wiki.prompt.md`, `.github/prompts/reset-wiki.prompt.md`, `.github/prompts/sync-docs.prompt.md`, `.github/prompts/run-maintenance.prompt.md`, `.github/prompts/regenerate-presentation.prompt.md`, `.github/prompts/orchestrate-wiki.prompt.md`. Also scan `copilot-instructions.md` to confirm every Copilot-available skill is listed under `## Available Prompts` or `## Repo Maintenance`. Return: verified count, missing files, malformed frontmatter."
 
----
+**Agent 3 — Wiki Health**
+`subagent_type: "Explore"` — prompt: "In this repo: (1) list all `.md` files in `wiki/` excluding `index.md` and `log.md` — count them as entity pages; (2) read the first few lines of `wiki/index.md` — is it populated with actual entries or still an empty template? (3) read `wiki/log.md` and count source rows in the table; (4) list all files in `raw/` with extensions `.pdf`, `.txt`, `.html`, `.pptx`, `.docx`, `.xlsx`; (5) cross-reference `raw/` filenames against the Source column in `wiki/log.md` and list any raw files not yet logged as unsynced sources. Return all five findings."
 
-## Step 2: Verify Skill Registrations
-
-Check that every skill has its command file, Copilot prompt file, and a `copilot-instructions.md` entry.
-
-**Wiki skills:**
-
-| Skill | Claude command | Copilot prompt |
-|-------|---------------|----------------|
-| compile-papers | `.claude/commands/compile-papers.md` | `.github/prompts/compile-papers.prompt.md` |
-| sync-wiki | `.claude/commands/sync-wiki.md` | `.github/prompts/sync-wiki.prompt.md` |
-| audit-wiki | `.claude/commands/audit-wiki.md` | `.github/prompts/audit-wiki.prompt.md` |
-| reset-wiki | `.claude/commands/reset-wiki.md` | `.github/prompts/reset-wiki.prompt.md` |
-| launch-wiki-ui | `.claude/commands/launch-wiki-ui.md` | `.github/prompts/launch-wiki-ui.prompt.md` |
-
-**Repo maintenance skills:**
-
-| Skill | Claude command | Copilot prompt |
-|-------|---------------|----------------|
-| sync-docs | `.claude/commands/sync-docs.md` | `.github/prompts/sync-docs.prompt.md` |
-| run-maintenance | `.claude/commands/run-maintenance.md` | `.github/prompts/run-maintenance.prompt.md` |
-| regenerate-presentation | `.claude/commands/regenerate-presentation.md` | `.github/prompts/regenerate-presentation.prompt.md` |
-
-For each file: confirm it exists and has valid frontmatter (`description:` for Claude commands, `mode: agent` for Copilot prompts). Report any missing or malformed files.
-
-Also scan `copilot-instructions.md` to confirm every Copilot-available skill is listed under `## Available Prompts` or `## Repo Maintenance`.
+**Agent 4 — Git Status**
+`subagent_type: "Explore"` — prompt: "Run `git status --short` and `git log --oneline -5`. Return: staged file count, unstaged file count, untracked file count, and the text of the last 5 commit messages."
 
 ---
 
-## Step 3: Check Wiki Health
+## Step 2: Collect Results
 
-1. List all `.md` files in `wiki/` excluding `index.md` and `log.md` — these are entity pages
-2. Check `wiki/index.md`: is it populated with actual entries, or still the empty template?
-3. Read `wiki/log.md`: count source rows
-4. List all files in `raw/` with supported extensions (`.pdf`, `.txt`, `.html`, `.pptx`, `.docx`, `.xlsx`)
-5. Cross-reference `raw/` files against the Source column in `wiki/log.md`
-6. Identify any `raw/` files not yet logged (unsynced sources)
+Wait for all four agents to complete. Gather their outputs before proceeding to the report.
 
 ---
 
-## Step 4: Check Git Status
-
-```bash
-git status --short
-git log --oneline -5
-```
-
-Record: staged file count, unstaged file count, untracked file count, and the last 5 commit messages.
-
----
-
-## Step 5: Generate Maintenance Report
+## Step 3: Generate Maintenance Report
 
 1. Create the `reports/` directory if it does not exist:
    ```bash
