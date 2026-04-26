@@ -39,6 +39,8 @@ llm-wiki/
 │   ├── log.md                        # (Auto-generated) Compilation history
 │   └── <concept>.md                  # Entity pages — one per concept
 ├── wiki_query.py                     # Browser UI for querying the wiki with LLMs
+├── start-wiki-ui.sh                  # Start script to launch Browser UI
+├── stop-wiki-ui.sh                   # Terminator script for Browser UI
 ├── tests/                            # Automated tests (63 tests)
 │   ├── conftest.py                   # Streamlit mock, shared fixtures
 │   └── test_wiki_query.py            # Validation, file loading, prompt, API
@@ -229,7 +231,7 @@ wiki/index.md ← 4 new entries    wiki/log.md ← 2 new rows
 
    The app opens at **http://localhost:8501**.
 
-4. Run from the project root, to stop the UI (if force stop required)
+4. (Optional) To stop the UI (if force stop required), run from the project root
 
  ```bash
    sh ./stop-wiki-ui.sh
