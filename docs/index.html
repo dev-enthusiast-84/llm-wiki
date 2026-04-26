@@ -449,6 +449,31 @@
       .workflow { gap: 2rem; }
     }
 
+    /* ── Copilot hints ── */
+    .copilot-hint {
+      display: inline-flex; align-items: center; gap: .3rem;
+      font-size: .72rem; color: var(--muted); margin-top: .35rem;
+      line-height: 1.5;
+    }
+    .copilot-hint em { color: var(--accent3); font-style: normal; font-family: 'Cascadia Code','Fira Code','Menlo',monospace; }
+
+    /* ── Terminal tabs ── */
+    .t-tabs {
+      display: flex; background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    .t-tab {
+      background: transparent; border: none; cursor: pointer;
+      padding: .38rem 1rem; font-size: .76rem; color: var(--muted);
+      font-family: inherit; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; transition: color .15s, border-color .15s;
+    }
+    .t-tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+    .t-tab:hover:not(.active) { color: var(--text); }
+    .t-pane { display: none; }
+    .t-pane.active { display: block; }
+    .t-copilot-prompt { color: var(--accent3); }
+
     /* scroll fade-in */
     .reveal {
       opacity: 0; transform: translateY(24px);
@@ -495,23 +520,58 @@
       <div class="dot-red"></div>
       <div class="dot-yellow"></div>
       <div class="dot-green"></div>
-      <span class="terminal-title">llm-wiki — zsh</span>
+      <span class="terminal-title" id="t-title">llm-wiki — zsh</span>
     </div>
-    <div class="terminal-body">
-      <div><span class="t-comment"># Option A — one command (recommended)</span></div>
-      <div><span class="t-prompt">❯ </span><span class="t-cmd">/orchestrate-wiki</span></div>
-      <div><span class="t-out">✔ Empty wiki detected — compiling 5 sources (parallel agents) …</span></div>
-      <div><span class="t-out">✔ Created <span class="t-path">wiki/transformer.md</span> · <span class="t-path">wiki/bert.md</span> · 38 more</span></div>
-      <div><span class="t-out">✔ Audit passed · Synced README &amp; GitHub Pages</span></div>
-      <br>
-      <div><span class="t-comment"># Option B — step by step</span></div>
-      <div><span class="t-prompt">❯ </span><span class="t-cmd">/compile-papers</span><span class="t-comment">   # first run</span></div>
-      <div><span class="t-prompt">❯ </span><span class="t-cmd">/sync-wiki</span><span class="t-comment">        # after adding a paper</span></div>
-      <div><span class="t-prompt">❯ </span><span class="t-cmd">/audit-wiki</span><span class="t-comment">       # at 20+ pages</span></div>
-      <br>
-      <div><span class="t-comment"># Starting fresh after cloning?</span></div>
-      <div><span class="t-prompt">❯ </span><span class="t-cmd">/reset-wiki reset</span><span class="t-comment">  # wipe example pages first</span></div>
-      <div><span class="t-prompt">❯ </span><span class="t-cursor"></span></div>
+    <div class="t-tabs">
+      <button class="t-tab active" onclick="switchTab('claude')">Claude Code CLI</button>
+      <button class="t-tab" onclick="switchTab('copilot')">GitHub Copilot Chat</button>
+    </div>
+
+    <!-- Claude Code pane -->
+    <div class="t-pane active" id="t-claude">
+      <div class="terminal-body">
+        <div><span class="t-comment"># Option A — one command (recommended)</span></div>
+        <div><span class="t-prompt">❯ </span><span class="t-cmd">/orchestrate-wiki</span></div>
+        <div><span class="t-out">✔ Empty wiki detected — compiling 5 sources (parallel agents) …</span></div>
+        <div><span class="t-out">✔ Created <span class="t-path">wiki/transformer.md</span> · <span class="t-path">wiki/bert.md</span> · 38 more</span></div>
+        <div><span class="t-out">✔ Audit passed · Synced README &amp; GitHub Pages</span></div>
+        <br>
+        <div><span class="t-comment"># Option B — step by step</span></div>
+        <div><span class="t-prompt">❯ </span><span class="t-cmd">/compile-papers</span><span class="t-comment">   # first run</span></div>
+        <div><span class="t-prompt">❯ </span><span class="t-cmd">/sync-wiki</span><span class="t-comment">        # after adding a paper</span></div>
+        <div><span class="t-prompt">❯ </span><span class="t-cmd">/audit-wiki</span><span class="t-comment">       # at 20+ pages</span></div>
+        <br>
+        <div><span class="t-comment"># Starting fresh after cloning?</span></div>
+        <div><span class="t-prompt">❯ </span><span class="t-cmd">/reset-wiki reset</span><span class="t-comment">  # wipe example pages first</span></div>
+        <br>
+        <div><span class="t-comment"># Query your wiki</span></div>
+        <div><span class="t-prompt">❯ </span><span class="t-cmd">/launch-wiki-ui</span><span class="t-comment">   # Streamlit UI at localhost:8501</span></div>
+        <div><span class="t-prompt">❯ </span><span class="t-cmd">/stop-wiki-ui</span><span class="t-comment">     # stop when done</span></div>
+        <div><span class="t-prompt">❯ </span><span class="t-cursor"></span></div>
+      </div>
+    </div>
+
+    <!-- Copilot Chat pane -->
+    <div class="t-pane" id="t-copilot">
+      <div class="terminal-body">
+        <div><span class="t-comment"># Option A — recommended</span></div>
+        <div><span class="t-copilot-prompt">&gt; </span><span class="t-cmd">Orchestrate Wiki</span></div>
+        <div><span class="t-out">✔ Detected empty wiki — compiling sources with parallel agents …</span></div>
+        <div><span class="t-out">✔ Audit passed · Synced README &amp; GitHub Pages</span></div>
+        <br>
+        <div><span class="t-comment"># Option B — step by step</span></div>
+        <div><span class="t-copilot-prompt">&gt; </span><span class="t-cmd">Compile Papers to Wiki</span><span class="t-comment">   # first run</span></div>
+        <div><span class="t-copilot-prompt">&gt; </span><span class="t-cmd">Sync Wiki from Raw</span><span class="t-comment">        # new paper added</span></div>
+        <div><span class="t-copilot-prompt">&gt; </span><span class="t-cmd">Audit Wiki</span><span class="t-comment">                # at 20+ pages</span></div>
+        <br>
+        <div><span class="t-comment"># Starting fresh after cloning?</span></div>
+        <div><span class="t-copilot-prompt">&gt; </span><span class="t-cmd">Reset Wiki reset</span><span class="t-comment">           # wipe example pages first</span></div>
+        <br>
+        <div><span class="t-comment"># Query your wiki</span></div>
+        <div><span class="t-copilot-prompt">&gt; </span><span class="t-cmd">Launch Wiki UI</span><span class="t-comment">             # starts Streamlit at localhost:8501</span></div>
+        <div><span class="t-copilot-prompt">&gt; </span><span class="t-cmd">Stop Wiki UI</span><span class="t-comment">               # stop when done</span></div>
+        <div><span class="t-copilot-prompt">&gt; </span><span class="t-cursor" style="background:var(--accent3)"></span></div>
+      </div>
     </div>
   </div>
 </section>
@@ -607,6 +667,7 @@
       <div class="orch-banner-left">
         <span class="orch-rec">⚡ Recommended</span>
         <div class="orch-banner-cmd">/orchestrate-wiki</div>
+        <div class="copilot-hint">💬 Copilot Chat: <em>Orchestrate Wiki</em></div>
       </div>
       <div>
         <div class="orch-banner-desc">One command runs the full pipeline. It detects your wiki's current state and does the right thing automatically — no flags, no decisions needed.</div>
@@ -629,18 +690,21 @@
         <h3>Compile</h3>
         <p>First run — batch-processes all sources in <code style="font-family:monospace;font-size:.85em;color:#38bdf8">/raw</code>, extracts concepts, and creates structured entity pages.</p>
         <div class="step-cmd">/compile-papers</div>
+        <div class="copilot-hint">💬 <em>Compile Papers to Wiki</em></div>
       </div>
       <div class="workflow-step">
         <div class="step-num">2</div>
         <h3>Sync</h3>
         <p>Added a new paper? Sync detects what changed and incrementally updates only the relevant pages.</p>
         <div class="step-cmd">/sync-wiki</div>
+        <div class="copilot-hint">💬 <em>Sync Wiki from Raw</em></div>
       </div>
       <div class="workflow-step">
         <div class="step-num">3</div>
         <h3>Audit</h3>
         <p>Once you've grown to ~20+ pages, audit checks for orphans, broken links, contradictions, and stale claims.</p>
         <div class="step-cmd">/audit-wiki</div>
+        <div class="copilot-hint">💬 <em>Audit Wiki</em></div>
       </div>
     </div>
 
@@ -649,6 +713,7 @@
       <strong>⚠ Starting fresh after cloning?</strong> The repo ships with example wiki pages.
       Run <code>/reset-wiki reset</code> before running the pipeline to wipe them and start with your own papers.
       Without the <code>reset</code> argument, <code>/reset-wiki</code> only reports state — it never deletes anything.
+      <div class="copilot-hint" style="margin-top:.5rem">💬 Copilot Chat: <em>Reset Wiki reset</em></div>
     </div>
   </div>
 </section>
@@ -905,7 +970,9 @@
         <div>
           <h3>Build the wiki</h3>
           <p><strong style="color:var(--accent2)">Recommended:</strong> run <code>/orchestrate-wiki</code> — detects state, compiles or syncs, audits, and syncs docs in one go.</p>
-          <p style="margin-top:.4rem; color:var(--muted); font-size:.85rem;">Or step by step: <code>/compile-papers</code> first run → <code>/sync-wiki</code> after each new paper → <code>/audit-wiki</code> at 20+ pages.</p>
+          <div class="copilot-hint" style="margin-top:.3rem">💬 Copilot Chat: <em>Orchestrate Wiki</em></div>
+          <p style="margin-top:.6rem; color:var(--muted); font-size:.85rem;">Or step by step: <code>/compile-papers</code> first run → <code>/sync-wiki</code> after each new paper → <code>/audit-wiki</code> at 20+ pages.</p>
+          <div class="copilot-hint" style="margin-top:.3rem">💬 Copilot Chat: <em>Compile Papers to Wiki</em> → <em>Sync Wiki from Raw</em> → <em>Audit Wiki</em></div>
         </div>
       </div>
       <div class="gs-step reveal">
@@ -913,6 +980,8 @@
         <div>
           <h3>Query with <code>/launch-wiki-ui</code></h3>
           <p>A 3-screen flow: enter your model ID and API key → confirm loaded wiki pages → chat. Answers are grounded strictly in your wiki and cite the source page. Topics not yet covered return an explicit "No information found" with instructions on which file to add.</p>
+          <div class="copilot-hint" style="margin-top:.4rem">💬 Copilot Chat: <em>Launch Wiki UI</em> &nbsp;·&nbsp; <em>Stop Wiki UI</em></div>
+          <p style="margin-top:.65rem; font-size:.83rem; color:var(--muted);">▶ <a href="presentation.html" style="color:var(--accent3); text-decoration:none;">See it in action — demo deck →</a></p>
         </div>
       </div>
     </div>
@@ -939,6 +1008,16 @@
 </footer>
 
 <script>
+  // Terminal tab switcher
+  function switchTab(tab) {
+    document.querySelectorAll('.t-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.t-pane').forEach(p => p.classList.remove('active'));
+    document.querySelector('.t-tab[onclick="switchTab(\'' + tab + '\')"]').classList.add('active');
+    document.getElementById('t-' + tab).classList.add('active');
+    document.getElementById('t-title').textContent =
+      tab === 'claude' ? 'llm-wiki — zsh' : 'Copilot Chat — VS Code';
+  }
+
   // Scroll reveal
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => {
