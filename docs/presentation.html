@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Wiki — Presentation</title>
+  <meta name="description" content="LLM Wiki: Karpathy's Knowledge Architecture for AI Research — 5-slide deck" />
+
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+
+    /* ── PPTX palette ── */
+    :root {
+      --bg:      rgb(8,12,28);
+      --panel:   rgb(16,26,56);
+      --card:    rgb(22,36,72);
+      --divider: rgb(35,55,100);
+      --white:   rgb(240,225,195);
+      --light:   rgb(196,212,238);
+      --dim:     rgb(105,130,172);
+      --blue:    rgb(59,130,246);
+      --blue-aa: rgb(100,165,255);
+      --cyan:    rgb(6,182,212);
+      --green:   rgb(16,185,129);
+      --orange:  rgb(245,158,11);
+      --purple:  rgb(139,92,246);
+      --purp-aa: rgb(170,130,255);
+      --red:     rgb(239,68,68);
+
+      /* site nav palette (matches index/readme) */
+      --nav-bg:     rgba(8,12,28,0.92);
+      --nav-border: rgba(255,255,255,0.07);
+      --accent:     #7c6af5;
+      --accent2:    #a78bfa;
+    }
+
+    body {
+      background: var(--bg);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--white);
+    }
+
+    /* ── Site nav (same style as index/readme) ── */
+    nav.site-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 56px;
+      background: var(--nav-bg);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--nav-border);
+      transition: transform .3s;
+    }
+    nav.site-nav.hidden { transform: translateY(-100%); }
+    .nav-logo { display: flex; align-items: center; gap: .5rem; font-weight: 700; font-size: 1.05rem; color: var(--white); text-decoration: none; }
+    .nav-logo span { color: var(--accent2); }
+    .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+    .nav-links a { color: var(--dim); text-decoration: none; font-size: .88rem; transition: color .2s; }
+    .nav-links a:hover { color: var(--light); }
+    .nav-links a.active { color: var(--accent2); }
+    .nav-cta { background: var(--accent); color: #fff; padding: .35rem .9rem; border-radius: 6px; text-decoration: none; font-size: .85rem; font-weight: 600; transition: opacity .2s; }
+    .nav-cta:hover { opacity: .85; }
+
+    /* ── Slide stage ── */
+    .stage {
+      position: fixed;
+      top: 56px; left: 0; right: 0; bottom: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg);
+    }
+    /* 16:9 slide that fills available space */
+    .deck {
+      position: relative;
+      width: min(100%, calc((100vh - 56px - 80px) * 16/9));
+      aspect-ratio: 16/9;
+    }
+
+    /* ── Individual slides ── */
+    .slide {
+      position: absolute; inset: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .4s;
+      padding: 5% 5.5%;
+      display: flex; flex-direction: column;
+    }
+    .slide.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* ── Slide backgrounds ── */
+    .slide-1 { background: linear-gradient(135deg, var(--bg) 0%, rgb(12,22,55) 100%); }
+    .slide-2 { background: var(--bg); }
+    .slide-3 { background: var(--bg); }
+    .slide-4 { background: var(--bg); }
+    .slide-5 { background: linear-gradient(135deg, var(--bg) 0%, rgb(5,10,32) 100%); }
+
+    /* ── Common slide elements ── */
+    .slide-title-row {
+      font-size: clamp(.9rem, 2.8vw, 2.1rem);
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -.02em;
+      line-height: 1.1;
+      margin-bottom: .5%;
+    }
+    .hline {
+      height: 1px;
+      background: var(--divider);
+      margin-bottom: 2.5%;
+    }
+    .label {
+      font-size: clamp(.45rem, 1vw, .75rem);
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: .5%;
+    }
+
+    /* ── Pill / chip ── */
+    .pill {
+      display: inline-flex; align-items: center;
+      border: 1px solid;
+      border-radius: 999px;
+      padding: .2em .75em;
+      font-size: clamp(.35rem, .9vw, .68rem);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .pill-rect {
+      display: inline-flex; align-items: center;
+      border: 1px solid;
+      border-radius: 4px;
+      padding: .2em .65em;
+      font-size: clamp(.35rem, .9vw, .65rem);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border-radius: 6px;
+      border: 1.5px solid;
+      padding: 4% 4%;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-accent-bar {
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .card-title {
+      font-size: clamp(.45rem, 1.1vw, .82rem);
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 4%;
+    }
+    .card-body {
+      font-size: clamp(.4rem, .95vw, .72rem);
+      color: var(--light);
+      line-height: 1.55;
+    }
+
+    /* ── Two-column layout ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3%;
+      flex: 1;
+    }
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 2.5%;
+    }
+
+    /* ────────────────────────────────────────────────────── */
+    /* SLIDE 1 — TITLE                                        */
+    /* ────────────────────────────────────────────────────── */
+    .s1-body { display: flex; gap: 4%; flex: 1; }
+    .s1-left {
+      flex: 1.8;
+      display: flex; flex-direction: column; justify-content: center;
+      padding-left: 2%;
+      border-left: 3px solid var(--blue);
+    }
+    .s1-headline {
+      font-size: clamp(1.1rem, 4.5vw, 3.4rem);
+      font-weight: 900;
+      color: var(--white);
+      letter-spacing: -.03em;
+      line-height: 1.0;
+      margin-bottom: 3%;
+    }
+    .s1-sub {
+      font-size: clamp(.45rem, 1.3vw, 1rem);
+      color: var(--light);
+      margin-bottom: 5%;
+      line-height: 1.4;
+    }
+    .s1-chips { display: flex; gap: 3%; flex-wrap: wrap; margin-bottom: 5%; }
+    .s1-foot {
+      font-size: clamp(.32rem, .8vw, .6rem);
+      color: var(--dim);
+    }
+    .s1-right {
+      flex: 1;
+      background: var(--panel);
+      border-radius: 6px;
+      padding: 5% 4%;
+      display: flex; flex-direction: column; gap: 3%;
+    }
+    .s1-arch-label {
+      font-size: clamp(.38rem, .85vw, .65rem);
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--light);
+      text-align: center;
+      margin-bottom: 2%;
+    }
+    .arch-layer {
+      background: var(--card);
+      border-radius: 5px;
+      border-left: 3px solid;
+      padding: 5% 5%;
+      flex: 1;
+    }
+    .arch-layer-name {
+      font-size: clamp(.4rem, .95vw, .72rem);
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin-bottom: 3%;
+    }
+    .arch-layer-desc {
+      font-size: clamp(.35rem, .82vw, .62rem);
+      color: var(--light);
+    }
+    .arch-arrow {
+      text-align: center;
+      color: var(--light);
+      font-size: clamp(.4rem, .9vw, .7rem);
+      line-height: 1;
+    }
+    .s1-layers { display: flex; flex-direction: column; flex: 1; gap: 0; }
+
+    /* ────────────────────────────────────────────────────── */
+    /* SLIDE 2 — PROBLEM                                      */
+    /* ────────────────────────────────────────────────────── */
+    .s2-body { display: flex; gap: 3%; flex: 1; }
+    .s2-col { flex: 1; display: flex; flex-direction: column; gap: 2.5%; }
+    .problem-card {
+      background: var(--card);
+      border: 1px solid var(--red);
+      border-left: 3px solid var(--red);
+      border-radius: 5px;
+      padding: 5% 5%;
+      flex: 1;
+    }
+    .problem-title {
+      font-size: clamp(.42rem, 1vw, .76rem);
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 6%;
+    }
+    .problem-desc {
+      font-size: clamp(.37rem, .88vw, .66rem);
+      color: var(--light);
+      line-height: 1.5;
+    }
+    .quote-block {
+      background: var(--card);
+      border: 1.5px solid var(--purple);
+      border-radius: 5px;
+      padding: 5% 5%;
+      font-size: clamp(.42rem, 1.05vw, .78rem);
+      font-weight: 700;
+      color: var(--purp-aa);
+      line-height: 1.5;
+      font-style: italic;
+      margin-bottom: 4%;
+    }
+    .layer-row {
+      display: flex; align-items: flex-start; gap: 4%;
+      margin-bottom: 3%;
+    }
+    .layer-bar {
+      width: 3px; border-radius: 2px;
+      flex-shrink: 0;
+      align-self: stretch;
+      min-height: 1.8em;
+    }
+    .layer-info {}
+    .layer-name {
+      font-size: clamp(.4rem, .95vw, .72rem);
+      font-weight: 700;
+    }
+    .layer-sub {
+      font-size: clamp(.35rem, .82vw, .62rem);
+      color: var(--light);
+    }
+    .insight-foot {
+      margin-top: auto;
+      font-size: clamp(.32rem, .75vw, .57rem);
+      color: var(--dim);
+    }
+
+    /* ────────────────────────────────────────────────────── */
+    /* SLIDE 3 — ARCHITECTURE                                 */
+    /* ────────────────────────────────────────────────────── */
+    .s3-body { display: flex; flex-direction: column; flex: 1; gap: 3%; }
+    .workflow-grid { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 0; align-items: stretch; }
+    .workflow-arrow {
+      display: flex; align-items: center; justify-content: center;
+      color: var(--dim);
+      font-size: clamp(.55rem, 1.4vw, 1.1rem);
+      padding: 0 1%;
+    }
+    .workflow-card {
+      background: var(--card);
+      border-radius: 5px;
+      border: 1.5px solid;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .wf-top-bar { height: 3px; }
+    .wf-inner { padding: 5% 5%; flex: 1; }
+    .wf-title {
+      font-size: clamp(.45rem, 1.1vw, .82rem);
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 6%;
+    }
+    .wf-desc {
+      font-size: clamp(.37rem, .88vw, .66rem);
+      color: var(--light);
+      line-height: 1.6;
+      text-align: center;
+    }
+    .pills-row { display: flex; flex-wrap: wrap; gap: 2%; align-items: center; }
+    .s3-pills-section { display: flex; flex-direction: column; gap: 1.5%; }
+
+    /* ────────────────────────────────────────────────────── */
+    /* SLIDE 4 — IMPLEMENTATION                               */
+    /* ────────────────────────────────────────────────────── */
+    .s4-body { display: flex; flex-direction: column; flex: 1; gap: 2%; }
+    .s4-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5%; flex: 1; }
+    .impl-col {
+      background: var(--card);
+      border-radius: 5px;
+      border: 1.5px solid;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .impl-top { height: 3px; }
+    .impl-inner { padding: 3.5% 4%; flex: 1; display: flex; flex-direction: column; }
+    .impl-heading {
+      font-size: clamp(.42rem, 1vw, .76rem);
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 4%;
+    }
+    .cmd-section-label {
+      font-size: clamp(.33rem, .78vw, .58rem);
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 2%;
+    }
+    .cmd-row {
+      display: flex;
+      align-items: baseline;
+      gap: 3%;
+      margin-bottom: 1.5%;
+    }
+    .cmd-name {
+      font-family: 'Cascadia Code', 'Fira Code', 'Menlo', monospace;
+      font-size: clamp(.33rem, .8vw, .62rem);
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .cmd-desc {
+      font-size: clamp(.32rem, .77vw, .58rem);
+      color: var(--light);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .impl-divider {
+      height: 1px;
+      background: var(--divider);
+      margin: 2.5% 0;
+    }
+    .s4-ui-band {
+      background: var(--card);
+      border: 1.2px solid var(--cyan);
+      border-left: 3px solid var(--cyan);
+      border-radius: 5px;
+      padding: 2% 3%;
+      display: flex; gap: 3%; align-items: flex-start;
+    }
+    .ui-band-title {
+      font-size: clamp(.4rem, .95vw, .72rem);
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      white-space: nowrap;
+      flex-shrink: 0;
+      padding-top: .1em;
+    }
+    .ui-feat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2%;
+      flex: 1;
+    }
+    .ui-feat { }
+    .ui-feat-title {
+      font-size: clamp(.35rem, .83vw, .62rem);
+      font-weight: 700;
+      color: var(--light);
+      margin-bottom: 2%;
+    }
+    .ui-feat-sub {
+      font-size: clamp(.3rem, .72vw, .54rem);
+      color: var(--dim);
+      line-height: 1.4;
+    }
+
+    /* ────────────────────────────────────────────────────── */
+    /* SLIDE 5 — DEMO / CTA                                   */
+    /* ────────────────────────────────────────────────────── */
+    .s5-body { display: flex; gap: 3%; flex: 1; }
+    .demo-panel {
+      flex: 1;
+      background: var(--card);
+      border-radius: 6px;
+      border: 1.5px solid;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4%;
+      padding: 4%;
+    }
+    .demo-play {
+      font-size: clamp(1.2rem, 4vw, 3rem);
+      opacity: .7;
+    }
+    .demo-title {
+      font-size: clamp(.45rem, 1.1vw, .82rem);
+      font-weight: 700;
+      text-align: center;
+    }
+    .demo-sub {
+      font-size: clamp(.33rem, .8vw, .6rem);
+      color: var(--dim);
+      text-align: center;
+      line-height: 1.5;
+    }
+    .s5-cta {
+      margin-top: 3%;
+      display: flex; gap: 2.5%; justify-content: center; flex-wrap: wrap;
+    }
+    .cta-pill {
+      background: transparent;
+      border: 1.5px solid;
+      border-radius: 6px;
+      padding: .4em 1em;
+      font-size: clamp(.38rem, .9vw, .68rem);
+      font-weight: 700;
+      text-decoration: none;
+      transition: opacity .2s;
+      cursor: pointer;
+    }
+    .cta-pill:hover { opacity: .75; }
+
+    /* ── Navigation bar ── */
+    .nav-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 48px;
+      background: rgba(8,12,28,.92);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--nav-border);
+      display: flex; align-items: center; justify-content: center; gap: 1.5rem;
+      z-index: 200;
+    }
+    .nav-btn {
+      background: none; border: 1px solid var(--divider);
+      color: var(--light); border-radius: 6px;
+      padding: .3rem .9rem; font-size: .82rem; cursor: pointer;
+      transition: border-color .2s, color .2s;
+    }
+    .nav-btn:hover:not(:disabled) { border-color: var(--blue-aa); color: var(--white); }
+    .nav-btn:disabled { opacity: .3; cursor: default; }
+    .slide-counter {
+      font-size: .82rem; color: var(--dim);
+      min-width: 48px; text-align: center;
+    }
+    .slide-dots {
+      display: flex; gap: .45rem; align-items: center;
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--divider);
+      cursor: pointer; transition: background .2s, transform .2s;
+    }
+    .dot.active { background: var(--blue-aa); transform: scale(1.35); }
+
+    /* ── Fullscreen toggle ── */
+    .fs-btn {
+      position: fixed; bottom: .9rem; right: 1.2rem;
+      background: none; border: 1px solid var(--divider);
+      color: var(--dim); border-radius: 6px;
+      padding: .25rem .6rem; font-size: .72rem; cursor: pointer;
+      z-index: 201; transition: color .2s, border-color .2s;
+    }
+    .fs-btn:hover { color: var(--light); border-color: var(--blue-aa); }
+
+    @media (max-width: 600px) {
+      nav.site-nav { padding: 0 1rem; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Site nav ── -->
+<nav class="site-nav" id="site-nav">
+  <a class="nav-logo" href="index.html">📚 <span>LLM</span> Wiki</a>
+  <ul class="nav-links">
+    <li><a href="index.html#features">Features</a></li>
+    <li><a href="index.html#how-it-works">How it works</a></li>
+    <li><a href="index.html#tools">Commands</a></li>
+    <li><a href="index.html#query-ui">Query UI</a></li>
+    <li><a href="readme.html">Docs</a></li>
+    <li><a href="presentation.html" class="active">Deck</a></li>
+  </ul>
+  <a class="nav-cta" href="https://github.com/dev-enthusiast-84/llm-wiki" target="_blank" rel="noopener">View on GitHub →</a>
+</nav>
+
+<!-- ── Slide stage ── -->
+<div class="stage">
+  <div class="deck">
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- SLIDE 1 — TITLE                                    -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="slide slide-1 active">
+      <div class="s1-body">
+        <div class="s1-left">
+          <div class="s1-headline">LLM WIKI</div>
+          <div class="s1-sub">Karpathy's Knowledge Architecture<br>for AI Research</div>
+          <div class="s1-chips">
+            <span class="pill" style="color:var(--blue);border-color:var(--blue);background:rgba(59,130,246,.1)">AI-maintained</span>
+            <span class="pill" style="color:var(--cyan);border-color:var(--cyan);background:rgba(6,182,212,.1)">Human-curated</span>
+            <span class="pill" style="color:var(--green);border-color:var(--green);background:rgba(16,185,129,.1)">Always current</span>
+          </div>
+          <div class="s1-foot">Inspired by Andrej Karpathy · gist.github.com/karpathy/442a6bf…</div>
+        </div>
+
+        <div class="s1-right">
+          <div class="s1-arch-label">Architecture</div>
+          <div class="s1-layers">
+            <div class="arch-layer" style="border-color:var(--orange)">
+              <div class="arch-layer-name" style="color:var(--orange)">Raw Sources</div>
+              <div class="arch-layer-desc">Papers · HTML · PPTX · DOCX · XLSX</div>
+            </div>
+            <div class="arch-arrow">↓</div>
+            <div class="arch-layer" style="border-color:var(--blue)">
+              <div class="arch-layer-name" style="color:var(--blue-aa)">Wiki Layer</div>
+              <div class="arch-layer-desc">Entity pages · [[links]] · Citations</div>
+            </div>
+            <div class="arch-arrow">↓</div>
+            <div class="arch-layer" style="border-color:var(--purple)">
+              <div class="arch-layer-name" style="color:var(--purp-aa)">Schema / Config</div>
+              <div class="arch-layer-desc">CLAUDE.md · Conventions · Workflows</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- SLIDE 2 — PROBLEM                                  -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="slide slide-2">
+      <div class="slide-title-row">The Knowledge Management Crisis</div>
+      <div class="hline"></div>
+      <div class="s2-body">
+        <div class="s2-col">
+          <div class="label">The Problem</div>
+          <div class="problem-card">
+            <div class="problem-title">Knowledge Overload</div>
+            <div class="problem-desc">Hundreds of papers, articles, and docs — impossible to track manually</div>
+          </div>
+          <div class="problem-card">
+            <div class="problem-title">Manual Maintenance</div>
+            <div class="problem-desc">Wikis die because nobody updates cross-references or fixes stale links</div>
+          </div>
+          <div class="problem-card">
+            <div class="problem-title">Scattered Insights</div>
+            <div class="problem-desc">Key ideas live in separate notebooks, tabs, and memory — never connected</div>
+          </div>
+        </div>
+        <div class="s2-col">
+          <div class="label">Karpathy's Insight</div>
+          <div class="quote-block">"LLMs don't get bored. They don't forget to update a cross-reference."</div>
+          <div style="font-size:clamp(.4rem,.95vw,.72rem);font-weight:700;color:var(--light);margin-bottom:3%">Three-layer model:</div>
+          <div class="layer-row">
+            <div class="layer-bar" style="background:var(--orange)"></div>
+            <div class="layer-info">
+              <div class="layer-name" style="color:var(--orange)">Raw Sources</div>
+              <div class="layer-sub">Immutable — curated by humans</div>
+            </div>
+          </div>
+          <div class="layer-row">
+            <div class="layer-bar" style="background:var(--blue)"></div>
+            <div class="layer-info">
+              <div class="layer-name" style="color:var(--blue-aa)">Wiki Layer</div>
+              <div class="layer-sub">LLM-owned — maintained automatically</div>
+            </div>
+          </div>
+          <div class="layer-row">
+            <div class="layer-bar" style="background:var(--purple)"></div>
+            <div class="layer-info">
+              <div class="layer-name" style="color:var(--purp-aa)">Schema</div>
+              <div class="layer-sub">Config — conventions &amp; workflows</div>
+            </div>
+          </div>
+          <div class="insight-foot">Inspired by Vannevar Bush's Memex (1945) — the original vision for associative knowledge</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- SLIDE 3 — ARCHITECTURE                             -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="slide slide-3">
+      <div class="slide-title-row">Three Layers. Three Workflows.</div>
+      <div class="hline"></div>
+      <div class="s3-body">
+        <div class="workflow-grid">
+          <div class="workflow-card" style="border-color:var(--blue)">
+            <div class="wf-top-bar" style="background:var(--blue)"></div>
+            <div class="wf-inner">
+              <div class="wf-title" style="color:var(--blue)">Ingest</div>
+              <div class="wf-desc">Add a source → extract concepts → update pages → add cross-references</div>
+            </div>
+          </div>
+          <div class="workflow-arrow">→</div>
+          <div class="workflow-card" style="border-color:var(--cyan)">
+            <div class="wf-top-bar" style="background:var(--cyan)"></div>
+            <div class="wf-inner">
+              <div class="wf-title" style="color:var(--cyan)">Query</div>
+              <div class="wf-desc">Search relevant pages → synthesize answer → file new discoveries</div>
+            </div>
+          </div>
+          <div class="workflow-arrow">→</div>
+          <div class="workflow-card" style="border-color:var(--green)">
+            <div class="wf-top-bar" style="background:var(--green)"></div>
+            <div class="wf-inner">
+              <div class="wf-title" style="color:var(--green)">Lint</div>
+              <div class="wf-desc">Find orphan pages, gaps, contradictions, and stale information</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="s3-pills-section">
+          <div class="label">Entity page format</div>
+          <div class="pills-row">
+            <span class="pill-rect" style="color:var(--cyan);border-color:var(--cyan);background:rgba(6,182,212,.08)">Definition</span>
+            <span class="pill-rect" style="color:var(--cyan);border-color:var(--cyan);background:rgba(6,182,212,.08)">Summary</span>
+            <span class="pill-rect" style="color:var(--cyan);border-color:var(--cyan);background:rgba(6,182,212,.08)">Explanation</span>
+            <span class="pill-rect" style="color:var(--cyan);border-color:var(--cyan);background:rgba(6,182,212,.08)">Related Concepts</span>
+            <span class="pill-rect" style="color:var(--cyan);border-color:var(--cyan);background:rgba(6,182,212,.08)">Sources</span>
+            <span class="pill-rect" style="color:var(--cyan);border-color:var(--cyan);background:rgba(6,182,212,.08)">Contradictions</span>
+          </div>
+        </div>
+
+        <div class="s3-pills-section">
+          <div class="label">Source formats (full text extraction)</div>
+          <div class="pills-row">
+            <span class="pill-rect" style="color:var(--green);border-color:var(--green);background:rgba(16,185,129,.08)">PDF ✓</span>
+            <span class="pill-rect" style="color:var(--green);border-color:var(--green);background:rgba(16,185,129,.08)">TXT ✓</span>
+            <span class="pill-rect" style="color:var(--green);border-color:var(--green);background:rgba(16,185,129,.08)">HTML ✓</span>
+            <span class="pill-rect" style="color:var(--cyan);border-color:var(--cyan);background:rgba(6,182,212,.08)">PPTX ✓</span>
+            <span class="pill-rect" style="color:var(--cyan);border-color:var(--cyan);background:rgba(6,182,212,.08)">DOCX ✓</span>
+            <span class="pill-rect" style="color:var(--cyan);border-color:var(--cyan);background:rgba(6,182,212,.08)">XLSX ✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- SLIDE 4 — IMPLEMENTATION                           -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="slide slide-4">
+      <div class="slide-title-row">Works Where You Work</div>
+      <div class="hline"></div>
+      <div class="s4-body">
+        <div class="s4-cols">
+          <!-- Claude Code CLI -->
+          <div class="impl-col" style="border-color:var(--orange)">
+            <div class="impl-top" style="background:var(--orange)"></div>
+            <div class="impl-inner">
+              <div class="impl-heading" style="color:var(--orange)">Claude Code CLI</div>
+              <div class="cmd-section-label" style="color:var(--orange)">Wiki Skills</div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--orange)">/orchestrate-wiki</span><span class="cmd-desc">Full pipeline — parallel agents</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--orange)">/compile-papers</span><span class="cmd-desc">Extract concepts from /raw</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--orange)">/sync-wiki</span><span class="cmd-desc">Incremental update from /raw</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--orange)">/audit-wiki</span><span class="cmd-desc">Quality check — parallel agents</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--orange)">/reset-wiki</span><span class="cmd-desc">Wipe wiki for a fresh start</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--orange)">/launch-wiki-ui</span><span class="cmd-desc">Start Streamlit query interface</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--orange)">/stop-wiki-ui</span><span class="cmd-desc">Stop the running Streamlit app</span></div>
+              <div class="impl-divider"></div>
+              <div class="cmd-section-label" style="color:var(--purp-aa)">Repo Maintenance</div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--purp-aa)">/sync-docs</span><span class="cmd-desc">Sync README &amp; GitHub Pages</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--purp-aa)">/run-maintenance</span><span class="cmd-desc">Tests, skill check, git health</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--purp-aa)">/regenerate-presentation</span><span class="cmd-desc">Rebuild videos &amp; deck</span></div>
+            </div>
+          </div>
+          <!-- GitHub Copilot Chat -->
+          <div class="impl-col" style="border-color:var(--blue)">
+            <div class="impl-top" style="background:var(--blue)"></div>
+            <div class="impl-inner">
+              <div class="impl-heading" style="color:var(--blue-aa)">GitHub Copilot Chat</div>
+              <div class="cmd-section-label" style="color:var(--blue-aa)">Wiki Skills</div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--blue-aa)">Orchestrate Wiki</span><span class="cmd-desc">Full pipeline — parallel agents</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--blue-aa)">Compile Papers to Wiki</span><span class="cmd-desc">Extract from all /raw sources</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--blue-aa)">Sync Wiki from Raw</span><span class="cmd-desc">Incremental update from /raw</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--blue-aa)">Audit Wiki</span><span class="cmd-desc">Quality check — parallel agents</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--blue-aa)">Reset Wiki</span><span class="cmd-desc">Wipe wiki for a fresh start</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--blue-aa)">Launch Wiki UI</span><span class="cmd-desc">Start Streamlit query interface</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--blue-aa)">Stop Wiki UI</span><span class="cmd-desc">Stop the running Streamlit app</span></div>
+              <div class="impl-divider"></div>
+              <div class="cmd-section-label" style="color:var(--purp-aa)">Repo Maintenance</div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--purp-aa)">Sync Docs</span><span class="cmd-desc">Sync README &amp; documentation</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--purp-aa)">Run Maintenance</span><span class="cmd-desc">Tests, skill check, git health</span></div>
+              <div class="cmd-row"><span class="cmd-name" style="color:var(--purp-aa)">Regenerate Presentation</span><span class="cmd-desc">Rebuild videos &amp; deck</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Streamlit UI band -->
+        <div class="s4-ui-band">
+          <div class="ui-band-title">Streamlit<br>Query UI</div>
+          <div class="ui-feat-grid">
+            <div class="ui-feat">
+              <div class="ui-feat-title">Multi-provider Q&amp;A</div>
+              <div class="ui-feat-sub">Anthropic · OpenAI · Google · Mistral</div>
+            </div>
+            <div class="ui-feat">
+              <div class="ui-feat-title">Wiki-grounded answers</div>
+              <div class="ui-feat-sub">No hallucination outside wiki content</div>
+            </div>
+            <div class="ui-feat">
+              <div class="ui-feat-title">API key validation</div>
+              <div class="ui-feat-sub">Session memory — never saved to disk</div>
+            </div>
+            <div class="ui-feat">
+              <div class="ui-feat-title">Explicit "not found"</div>
+              <div class="ui-feat-sub">Clear signal when topic is outside wiki</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- SLIDE 5 — DEMO / CTA                               -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="slide slide-5">
+      <div class="slide-title-row">See It In Action</div>
+      <div class="hline"></div>
+      <div class="s5-body">
+        <div class="demo-panel" style="border-color:var(--orange)">
+          <div class="demo-play">▶</div>
+          <div class="demo-title" style="color:var(--orange)">Terminal Skills Demo</div>
+          <div class="demo-sub">orchestrate-wiki (parallel agents)<br>compile · sync · audit · Copilot</div>
+        </div>
+        <div class="demo-panel" style="border-color:var(--cyan)">
+          <div class="demo-play">▶</div>
+          <div class="demo-title" style="color:var(--cyan)">Wiki Query UI Demo</div>
+          <div class="demo-sub">settings · happy-path query<br>empty wiki · not-found error</div>
+        </div>
+      </div>
+      <div class="s5-cta">
+        <a class="cta-pill" style="color:var(--blue-aa);border-color:var(--blue-aa)" href="https://github.com/dev-enthusiast-84/llm-wiki" target="_blank" rel="noopener">⭐ Star on GitHub</a>
+        <a class="cta-pill" style="color:var(--cyan);border-color:var(--cyan)" href="index.html">Live Docs →</a>
+        <a class="cta-pill" style="color:var(--green);border-color:var(--green)" href="readme.html">Full README →</a>
+        <a class="cta-pill" style="color:var(--purp-aa);border-color:var(--purp-aa)" href="https://github.com/dev-enthusiast-84/llm-wiki/fork" target="_blank" rel="noopener">Fork &amp; Customize →</a>
+      </div>
+    </div>
+
+  </div><!-- .deck -->
+</div><!-- .stage -->
+
+<!-- ── Slide navigation ── -->
+<div class="nav-bar">
+  <button class="nav-btn" id="prev-btn" disabled>← Prev</button>
+  <div class="slide-dots">
+    <div class="dot active" data-i="0"></div>
+    <div class="dot" data-i="1"></div>
+    <div class="dot" data-i="2"></div>
+    <div class="dot" data-i="3"></div>
+    <div class="dot" data-i="4"></div>
+  </div>
+  <span class="slide-counter" id="counter">1 / 5</span>
+  <button class="nav-btn" id="next-btn">Next →</button>
+</div>
+
+<button class="fs-btn" id="fs-btn" title="Toggle fullscreen">⛶ Fullscreen</button>
+
+<script>
+  const slides  = document.querySelectorAll('.slide');
+  const dots    = document.querySelectorAll('.dot');
+  const prev    = document.getElementById('prev-btn');
+  const next    = document.getElementById('next-btn');
+  const counter = document.getElementById('counter');
+  const siteNav = document.getElementById('site-nav');
+  const fsBtn   = document.getElementById('fs-btn');
+  let cur = 0;
+
+  function goTo(n) {
+    slides[cur].classList.remove('active');
+    dots[cur].classList.remove('active');
+    cur = Math.max(0, Math.min(slides.length - 1, n));
+    slides[cur].classList.add('active');
+    dots[cur].classList.add('active');
+    counter.textContent = `${cur + 1} / ${slides.length}`;
+    prev.disabled = cur === 0;
+    next.disabled = cur === slides.length - 1;
+  }
+
+  prev.addEventListener('click', () => goTo(cur - 1));
+  next.addEventListener('click', () => goTo(cur + 1));
+  dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.i)));
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); goTo(cur + 1); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); goTo(cur - 1); }
+    if (e.key === 'f' || e.key === 'F') toggleFS();
+  });
+
+  // Fullscreen
+  function toggleFS() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        siteNav.classList.add('hidden');
+        fsBtn.textContent = '✕ Exit fullscreen';
+      });
+    } else {
+      document.exitFullscreen().then(() => {
+        siteNav.classList.remove('hidden');
+        fsBtn.textContent = '⛶ Fullscreen';
+      });
+    }
+  }
+  fsBtn.addEventListener('click', toggleFS);
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) {
+      siteNav.classList.remove('hidden');
+      fsBtn.textContent = '⛶ Fullscreen';
+    }
+  });
+</script>
+</body>
+</html>
