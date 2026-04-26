@@ -208,7 +208,7 @@
 
 A structured system for building and maintaining a personal wiki of LLM/AI concepts from research papers. Extract key concepts from sources, create interconnected entity pages, and keep your knowledge base organized and up-to-date.
 
-**[Live docs →](https://dev-enthusiast-84.github.io/llm-wiki/)** · **[GitHub →](https://github.com/dev-enthusiast-84/llm-wiki)**
+**[Live docs →](index.html)** · **[GitHub →](https://github.com/dev-enthusiast-84/llm-wiki)**
 
 ## Quick Start
 
@@ -512,6 +512,22 @@ A: Run `/sync-docs` — it detects changed skill files and updates `README.md` a
   const md = mdEl.textContent;
   marked.setOptions({ gfm: true, breaks: false });
   document.getElementById('readme-content').innerHTML = marked.parse(md);
+
+  // Rewrite any absolute links that point to the site root back to index.html
+  // so they stay within the deployed docs/ folder and never hit the Jekyll root.
+  const siteOrigins = [
+    'https://dev-enthusiast-84.github.io/llm-wiki/',
+    window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/'),
+  ];
+  document.querySelectorAll('#readme-content a[href]').forEach(a => {
+    const href = a.getAttribute('href');
+    for (const base of siteOrigins) {
+      if (href === base || href === base.replace(/\/$/, '')) {
+        a.setAttribute('href', 'index.html');
+        break;
+      }
+    }
+  });
 
   // Back-to-top button
   const btn = document.getElementById('back-top');
