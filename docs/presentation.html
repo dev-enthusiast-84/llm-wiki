@@ -97,7 +97,6 @@
     .slide-2 { background: var(--bg); }
     .slide-3 { background: var(--bg); }
     .slide-4 { background: var(--bg); }
-    .slide-5 { background: linear-gradient(135deg, var(--bg) 0%, rgb(5,10,32) 100%); }
 
     /* ── Common slide elements ── */
     .slide-title-row {
@@ -440,48 +439,6 @@
       line-height: 1.4;
     }
 
-    /* ────────────────────────────────────────────────────── */
-    /* SLIDE 5 — DEMO / CTA                                   */
-    /* ────────────────────────────────────────────────────── */
-    .s5-body { display: flex; gap: 3%; flex: 1; min-height: 0; }
-    .demo-panel {
-      flex: 1;
-      background: #000;
-      border-radius: 6px;
-      border: 1.5px solid;
-      position: relative;
-      overflow: hidden;
-      min-height: 0;
-    }
-    .demo-label {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      background: rgba(8,12,28,.82);
-      border-top: 1px solid;
-      padding: 2% 4%;
-      display: flex; align-items: baseline; gap: 4%;
-      font-size: clamp(.38rem, .9vw, .68rem);
-      backdrop-filter: blur(4px);
-    }
-    .demo-sub-inline {
-      font-size: clamp(.3rem, .72vw, .54rem);
-      color: var(--dim);
-    }
-    .s5-cta {
-      margin-top: 3%;
-      display: flex; gap: 2.5%; justify-content: center; flex-wrap: wrap;
-    }
-    .cta-pill {
-      background: transparent;
-      border: 1.5px solid;
-      border-radius: 6px;
-      padding: .4em 1em;
-      font-size: clamp(.38rem, .9vw, .68rem);
-      font-weight: 700;
-      text-decoration: none;
-      transition: opacity .2s;
-      cursor: pointer;
-    }
-    .cta-pill:hover { opacity: .75; }
 
     /* ── Navigation bar ── */
     .nav-bar {
